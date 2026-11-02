@@ -1,5 +1,7 @@
 # RE-USE-MLX-CoreML
 
+日本語 | [English](README.en.md)
+
 NVIDIA RE-USEの非公式Apple Silicon向け移植版です。Swiftライブラリとサンプルアプリを使い、MacとiPhoneで同じモデルによるノイズ除去を端末内で実行できます。
 
 モデルは[RE-USE for Apple Silicon (MLX + Core ML)](https://huggingface.co/AILogDev/RE-USE-MLX-CoreML)から取得します。非公開モデルへのアクセス方法は[モデル管理ガイド](docs/MODELS.md#非公開モデルを試す)を参照してください。
@@ -43,6 +45,8 @@ await engine.release()
 URLの指定、処理モード、モデルの取得と削除は[SDKガイド](docs/SDK.md)を参照してください。
 
 ## iPhoneで使う
+
+サンプルアプリの画面表示は日本語です。
 
 アプリのビルド前に[モデル配布先とアクセス方法](docs/MODELS.md)を確認し、[ビルド手順](docs/BUILDING.md)に沿ってインストールします。
 

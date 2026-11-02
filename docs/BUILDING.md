@@ -1,5 +1,7 @@
 # ビルドとサンプルの実行
 
+日本語 | [English](BUILDING.en.md)
+
 Xcode、Metal Toolchain、Python 3を用意します。ビルド確認環境はXcode 27.2（Swift 6.4.2）です。以下のコマンドは`Package.swift`のあるディレクトリで実行します。
 
 ## iPhoneアプリ

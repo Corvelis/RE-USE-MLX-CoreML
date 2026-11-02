@@ -1,5 +1,7 @@
 # Swift SDK
 
+日本語 | [English](SDK.en.md)
+
 Xcodeの「Add Package Dependencies」からリポジトリURLとバージョンを指定し、必要なproductを追加します。ローカルのパッケージも追加できます。対象はApple Silicon MacとiPhone実機です。[ビルド環境](BUILDING.md)も参照してください。
 
 | Product | 用途 |

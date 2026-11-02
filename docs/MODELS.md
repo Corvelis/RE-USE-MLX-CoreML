@@ -1,5 +1,7 @@
 # モデルの配布と管理
 
+日本語 | [English](MODELS.en.md)
+
 MacとiPhoneは同じモデル一式を使用します。MLXの重みとCore MLの`.mlpackage`を配布し、Core MLのコンパイル結果は各端末で生成します。
 
 対応するモデルは[ModelCatalog.json](../App/ModelCatalog.json)で指定しています。38ファイル、合計54,206,689 bytes（約54.2 MB）です。カタログにはファイルごとのサイズとSHA-256が含まれます。
