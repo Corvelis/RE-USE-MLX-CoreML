@@ -1,0 +1,41 @@
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  model-assets:
+    name: Model assets and package helpers
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Check license notices
+        run: python3 make_notices.py --check
+      - name: Check Python and shell scripts
+        run: |
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          for path in Path('.').glob('*.py'):
+              ast.parse(path.read_text(), filename=str(path))
+          PY
+          zsh -n build_app.sh install_app.sh
+      - name: Generate Xcode project
+        run: |
+          python3 make_project.py
+          plutil -lint .build/app/ReuseLab.xcodeproj/project.pbxproj
+      - name: Test model downloads and storage
+        run: python3 test_model_assets.py

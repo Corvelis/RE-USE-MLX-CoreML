@@ -1,0 +1,28 @@
+ReuseKit / RE-USE Lab
+Copyright 2026 ReuseKit contributors
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+Model weights and third-party components retain their own license terms.
+
+This product includes modified Swift inference and Metal scan/convolution code
+from SpeechLens, revision f6c640fce1d265e8b4b7564ec81dff1f08d67200.
+https://github.com/faraday/SpeechLens
+Modifications include actor-confined execution, MLX/Core ML partitioning,
+spatial batching, mixed precision and fused Metal kernels.
+
+Original SpeechLens NOTICE follows:
+
+SpeechLens
+Copyright 2026 Çağatay Çallı
+
+Licensed under the Apache License, Version 2.0.
+See LICENSE for the full license text.
+
+Additional portions:
+Cooperative-tensor fragment layout: Copyright © 2025 Apple Inc.
+Licensed under MIT; see licenses/MLX-Core.txt.
+Metal-cpp: Copyright 2020-2024 Apple Inc.; Apache-2.0.
+Swift Numerics: Copyright (c) 2019-2025 Apple Inc. and the Swift Numerics
+project authors; Apache-2.0 with the Swift Runtime Library Exception.
+
+Full model, dependency and audio notices are in licenses/ and App/Notices.txt.

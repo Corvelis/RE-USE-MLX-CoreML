@@ -1,0 +1,16 @@
+.build/
+.swiftpm/
+dist/
+.DS_Store
+__pycache__/
+*.pyc
+xcuserdata/
+/ModelPack/
+/output*/
+*.safetensors
+*.mlpackage/
+*.mlmodelc/
+.env
+.env.*
+results_*.json
+*_results_*.json
