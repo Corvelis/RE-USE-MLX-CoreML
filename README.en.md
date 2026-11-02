@@ -6,6 +6,14 @@ An unofficial Apple Silicon port of NVIDIA RE-USE. The Swift library and samples
 
 Download the model from [RE-USE for Apple Silicon (MLX + Core ML)](https://huggingface.co/AILogDev/RE-USE-MLX-CoreML). For private model access, see the [model management guide](docs/MODELS.en.md#trying-a-private-model).
 
+## Demo video
+
+Noise reduction on an iPhone, with switching between original and enhanced audio during playback. Turn on sound to hear the difference.
+
+https://github.com/user-attachments/assets/cecc26f7-bc90-4b8f-83a4-0485c29924ff
+
+## Components
+
 | Component | Purpose |
 | --- | --- |
 | `ReuseKit` | MLX / Core ML inference, audio file I/O and RTF measurement |

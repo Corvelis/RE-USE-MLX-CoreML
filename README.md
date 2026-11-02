@@ -6,6 +6,14 @@ NVIDIA RE-USEの非公式Apple Silicon向け移植版です。Swiftライブラ�
 
 モデルは[RE-USE for Apple Silicon (MLX + Core ML)](https://huggingface.co/AILogDev/RE-USE-MLX-CoreML)から取得します。非公開モデルへのアクセス方法は[モデル管理ガイド](docs/MODELS.md#非公開モデルを試す)を参照してください。
 
+## デモ動画
+
+iPhoneでノイズを除去し、再生中に「ノイズあり／ノイズ除去後」を切り替えるデモです。音声をオンにして聴き比べてください。
+
+https://github.com/user-attachments/assets/cecc26f7-bc90-4b8f-83a4-0485c29924ff
+
+## コンポーネント
+
 | コンポーネント | 用途 |
 | --- | --- |
 | `ReuseKit` | MLX / Core MLによる推論、音声ファイルの読み書き、RTF計測 |
