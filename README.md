@@ -35,7 +35,7 @@ MLX Swiftは0.33.0に固定しています。Simulatorは画面確認用で、�
 
 ## Swift SDKとして使う
 
-Xcodeの「Add Package Dependencies」で`https://github.com/Corvelis/RE-USE-MLX-CoreML.git`の`main`ブランチを追加し、`ReuseKit`を選びます。[モデル一式](docs/BUILDING.md#macのコマンドラインサンプル)を用意したら、次のように音声ファイルを処理できます。
+Xcodeの「Add Package Dependencies」で`https://github.com/Corvelis/RE-USE-MLX-CoreML.git`のバージョン`0.1.0`を追加し、`ReuseKit`を選びます。[モデル一式](docs/BUILDING.md#macのコマンドラインサンプル)を用意したら、次のように音声ファイルを処理できます。
 
 ```swift
 import ReuseKit
@@ -97,6 +97,7 @@ RTFは「処理時間 ÷ 音声の長さ」です。0.1なら10秒の音声を�
 - [Swift SDKの組み込み](docs/SDK.md)
 - [モデルの配布・ダウンロード・削除](docs/MODELS.md)
 - [速度と品質の測定結果](docs/BENCHMARKS.md)
+- [リリース履歴](CHANGELOG.md)
 
 ## ソースパッケージを書き出す
 

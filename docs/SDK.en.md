@@ -14,7 +14,7 @@ To add `ReuseKit` from GitHub to another Swift Package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Corvelis/RE-USE-MLX-CoreML.git", branch: "main")
+    .package(url: "https://github.com/Corvelis/RE-USE-MLX-CoreML.git", from: "0.1.0")
 ],
 targets: [
     .executableTarget(name: "MyApp", dependencies: [

@@ -35,7 +35,7 @@ MLX Swift is pinned to 0.33.0. Use the Simulator to preview the interface and a 
 
 ## Using the Swift SDK
 
-In Xcode's “Add Package Dependencies,” add the `main` branch of `https://github.com/Corvelis/RE-USE-MLX-CoreML.git` and select `ReuseKit`. After downloading the [model files](docs/BUILDING.en.md#mac-command-line-sample), process an audio file as follows:
+In Xcode's “Add Package Dependencies,” add version `0.1.0` of `https://github.com/Corvelis/RE-USE-MLX-CoreML.git` and select `ReuseKit`. After downloading the [model files](docs/BUILDING.en.md#mac-command-line-sample), process an audio file as follows:
 
 ```swift
 import ReuseKit
@@ -97,6 +97,7 @@ Measured after warmup using 16 kHz mono audio lasting 7.92 seconds. The Mac resu
 - [Integrating the Swift SDK](docs/SDK.en.md)
 - [Model distribution, download and deletion](docs/MODELS.en.md)
 - [Speed and quality measurements](docs/BENCHMARKS.en.md)
+- [Release history](CHANGELOG.en.md)
 
 ## Exporting the source package
 
