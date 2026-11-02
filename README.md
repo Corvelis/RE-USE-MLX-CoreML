@@ -1,4 +1,4 @@
-# ReuseKit
+# RE-USE-MLX-CoreML
 
 NVIDIA RE-USEの非公式Apple Silicon向け移植版です。Swiftライブラリとサンプルアプリを使い、MacとiPhoneで同じモデルによるノイズ除去を端末内で実行できます。
 
@@ -25,7 +25,7 @@ MLX Swiftは0.33.0に固定しています。Simulatorは画面確認用で、�
 
 ## Swift SDKとして使う
 
-Xcodeの「Add Package Dependencies」で`https://github.com/Corvelis/ReuseKit.git`の`main`ブランチを追加し、`ReuseKit`を選びます。[モデル一式](docs/BUILDING.md#macのコマンドラインサンプル)を用意したら、次のように音声ファイルを処理できます。
+Xcodeの「Add Package Dependencies」で`https://github.com/Corvelis/RE-USE-MLX-CoreML.git`の`main`ブランチを追加し、`ReuseKit`を選びます。[モデル一式](docs/BUILDING.md#macのコマンドラインサンプル)を用意したら、次のように音声ファイルを処理できます。
 
 ```swift
 import ReuseKit

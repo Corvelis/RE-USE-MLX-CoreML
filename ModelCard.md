@@ -33,6 +33,8 @@ ReuseKit can read mono/stereo audio files and resample them to 16 kHz. The iPhon
 
 ## Swift SDK and samples
 
+[RE-USE-MLX-CoreML on GitHub](https://github.com/Corvelis/RE-USE-MLX-CoreML) provides the Swift SDK, sample apps and usage guides.
+
 [ReuseKit.zip](https://huggingface.co/AILogDev/RE-USE-MLX-CoreML/resolve/main/ReuseKit.zip) contains the Swift package, iPhone sample, Mac CLI, tests, documentation and license notices. The build environment used for validation is Xcode 27.2 / Swift 6.4.2 with the Metal Toolchain.
 
 Download this repository into a directory named `ModelPack`, and extract `ReuseKit.zip` beside it. From the extracted `ReuseKit` directory:

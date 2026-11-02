@@ -12,13 +12,13 @@ Xcodeの「Add Package Dependencies」からリポジトリURLとバージョン
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Corvelis/ReuseKit.git", branch: "main")
+    .package(url: "https://github.com/Corvelis/RE-USE-MLX-CoreML.git", branch: "main")
 ],
 targets: [
     .executableTarget(name: "MyApp", dependencies: [
-        .product(name: "ReuseKit", package: "reusekit"),
-        .product(name: "ReuseModelAssets", package: "reusekit"),
-        .product(name: "ReusePlayback", package: "reusekit")
+        .product(name: "ReuseKit", package: "re-use-mlx-coreml"),
+        .product(name: "ReuseModelAssets", package: "re-use-mlx-coreml"),
+        .product(name: "ReusePlayback", package: "re-use-mlx-coreml")
     ])
 ]
 ```
@@ -26,7 +26,7 @@ targets: [
 ローカルのチェックアウトを使う場合は、パッケージの指定を次のように置き換えます。
 
 ```swift
-.package(path: "../ReuseKit")
+.package(path: "../RE-USE-MLX-CoreML")
 ```
 
 アプリで使うproductだけを追加してください。
