@@ -64,8 +64,8 @@ Input is converted to 16 kHz mono. Output is 16 kHz mono Float32 WAV. “3回で
 
 | Mode | Execution | When to use |
 | --- | --- | --- |
-| MLX GPU | Runs the full model on the GPU | Default mode |
-| ANE + GPU | Runs CNNs through Core ML and Mamba stages through MLX / GPU | Compare when prioritizing speed |
+| ANE + GPU | Runs CNNs through Core ML and Mamba stages through MLX / GPU | Default in the iPhone app |
+| MLX GPU | Runs the full model on the GPU | Use the GPU only |
 
 Both modes retain all 30 stages, 16 FP32 recurrent states, five-second processing windows and 5% overlap. ANE + GPU uses FP16 for CNNs and boundary tensors, so its output differs from MLX GPU. The OS determines actual Core ML placement. Windows without a matching CNN shape use MLX.
 

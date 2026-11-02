@@ -64,8 +64,8 @@ URLの指定、処理モード、モデルの取得と削除は[SDKガイド](do
 
 | モード | 実行方法 | 選び方 |
 | --- | --- | --- |
-| MLX GPU | モデル全体をGPUで実行 | 既定のモード |
-| ANE + GPU | CNNをCore ML、Mamba部分をMLX / GPUで実行 | 速度を優先して比較する場合 |
+| ANE + GPU | CNNをCore ML、Mamba部分をMLX / GPUで実行 | iPhoneアプリの既定のモード |
+| MLX GPU | モデル全体をGPUで実行 | GPUだけで処理する場合 |
 
 両モードとも全30段、16個のFP32再帰状態、5秒の処理窓、5％の重なりを保ちます。ANE + GPUはCNNと境界データをFP16で扱うため、MLX GPUと出力に差があります。Core MLの実際の演算配置はOSが決定します。対応するCNN形状がない窓はMLXで処理します。
 

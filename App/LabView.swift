@@ -27,7 +27,7 @@ struct LabView: View {
                             .font(.subheadline).foregroundStyle(.red).accessibilityIdentifier("error")
                     }
                     if let output = model.output { resultCard(output).id("result") }
-                    Text("16 kHz・mono / 全30段 / 5秒窓\nRTF = 処理時間 ÷ 音声の長さ。初回は準備に時間がかかります。")
+                    Text("RTF = 処理時間 ÷ 音声の長さ。初回は準備に時間がかかります。")
                         .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(20)
@@ -185,14 +185,10 @@ struct LabView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("処理モード").font(.headline)
             Picker("処理モード", selection: $model.mode) {
+                Text("ANE + GPU").tag(ReuseMode.hybrid)
                 Text("MLX GPU").tag(ReuseMode.mlx)
-                Text("ANE + GPU · 実験").tag(ReuseMode.hybrid)
             }.pickerStyle(.segmented).disabled(model.busy || model.recording)
                 .onChange(of: model.mode) { _, _ in model.stopPlayback(); model.clearResult() }
-            Text(model.mode == .mlx
-                 ? "品質比較の基準。Macで確認した高速Metalカーネルを使用します。"
-                 : "CNNをANEへ分担する実験版。追加誤差があり、衝撃音などで差が大きくなる場合があります。未収録の窓長はMLXで処理します。")
-                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }.card()
     }
 
@@ -248,10 +244,6 @@ struct LabView: View {
                 Spacer()
                 Text(String(format: "MLX最大 %.0f MiB", Double(result.metrics.mlxPeakBytes)/1048576))
             }.font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-            if result.metrics.mode == .hybrid {
-                Text("CNNのANE許可窓 \(result.metrics.aneWindows) / MLX窓 \(result.metrics.mlxWindows)")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
             HStack(spacing: 20) {
                 if let url = model.outputURL {
                     Button {

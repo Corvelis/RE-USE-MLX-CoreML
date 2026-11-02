@@ -10,7 +10,7 @@ import UIKit
 @MainActor
 final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorderDelegate {
     nonisolated static let maximumAudioSeconds: TimeInterval = 300
-    @Published var mode: ReuseMode = .mlx
+    @Published var mode: ReuseMode = .hybrid
     @Published var sourceName = "音声を用意してください"
     @Published var prepared: ReuseAudio?
     @Published var output: ReuseResult?
