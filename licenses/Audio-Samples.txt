@@ -1,27 +1,22 @@
-Edinburgh Noisy Speech Database — CC BY 4.0
+Original sample recording
 
-Files: paired16.wav (noisy input), paired16_clean.wav (clean reference).
+File: sample_noisy.wav
+Copyright 2026 the recording contributor.
+SPDX-License-Identifier: Apache-2.0
 
-Creator and attribution:
-Valentini-Botinhao, Cassia. (2017).
-Noisy speech database for training speech enhancement algorithms and TTS
-models, 2016 [sound]. University of Edinburgh. School of Informatics.
-Centre for Speech Technology Research (CSTR).
-https://doi.org/10.7488/ds/2117
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Source recordings: p257_290, noisy and clean.
-Obtained from SpeechLens revision f6c640fce1d265e8b4b7564ec81dff1f08d67200:
-https://github.com/faraday/SpeechLens/tree/f6c640fce1d265e8b4b7564ec81dff1f08d67200/Tests/Fixtures/Real/48000/edinburgh_56_speaker_p257_290
-SpeechLens fixture attribution:
-https://github.com/faraday/SpeechLens/blob/f6c640fce1d265e8b4b7564ec81dff1f08d67200/Tests/Fixtures/Real/NOTICE.md
+    https://www.apache.org/licenses/LICENSE-2.0
 
-Modifications: resampled from 48 kHz to 16 kHz using polyphase resampling,
-converted to mono Float32 PCM WAV, and renamed. The clean reference is not
-model-generated. Enhanced versions produced from these recordings are
-adaptations; retain this attribution and indicate the enhancement.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. The complete license is included in LICENSE.
 
-Creative Commons Attribution 4.0 International:
-https://creativecommons.org/licenses/by/4.0/
-https://creativecommons.org/licenses/by/4.0/legalcode
-
-Distributed without warranties under Section 5 of that license.
+Original recording contributed to RE-USE-MLX-CoreML.
+Content: Japanese speech with vacuum-cleaner noise.
+Prepared as 16 kHz mono Float32 PCM WAV, 173,717 samples (10.8573125 seconds).
+The file contains audio-format information and PCM samples only.

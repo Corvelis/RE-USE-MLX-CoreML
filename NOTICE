@@ -3,6 +3,7 @@ Copyright 2026 ReuseKit contributors
 
 Licensed under the Apache License, Version 2.0. See LICENSE.
 Model weights and third-party components retain their own license terms.
+The original sample recording is Apache-2.0; see licenses/Audio-Samples.txt.
 
 This product includes modified Swift inference and Metal scan/convolution code
 from SpeechLens, revision f6c640fce1d265e8b4b7564ec81dff1f08d67200.

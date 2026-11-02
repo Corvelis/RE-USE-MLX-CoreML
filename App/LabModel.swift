@@ -60,7 +60,7 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
 
     func useSample() {
         guard !busy, !recording else { return }
-        let url = Bundle.main.bundleURL.appendingPathComponent("Samples/paired16.wav")
+        let url = Bundle.main.bundleURL.appendingPathComponent("Samples/sample_noisy.wav")
         importAudio(url, name: "ノイズを含むサンプル", scoped: false)
     }
 
@@ -263,7 +263,7 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
                 let engine = try await requireEngine()
                 try ReuseAudioFile.writeJSON(["status": "running", "date": Date().ISO8601Format()],
                     to: documents.appendingPathComponent("Speed/run.json"))
-                let audio = try ReuseAudioFile.read(Bundle.main.bundleURL.appendingPathComponent("Samples/paired16.wav"))
+                let audio = try ReuseAudioFile.read(Bundle.main.bundleURL.appendingPathComponent("Samples/sample_noisy.wav"))
                 let variants = CommandLine.arguments.first { $0.hasPrefix("--profile-variants=") }
                     .map { String($0.dropFirst("--profile-variants=".count)).split(separator:",").compactMap { ReuseOptimization(rawValue:String($0)) } }
                 let report = try await engine.diagnose(audio.samples, progressURL: documents.appendingPathComponent("Speed/progress.json"),
@@ -293,9 +293,9 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
         do {
             let engine = try await requireEngine()
             let paired = CommandLine.arguments.contains("--paired")
-            let url = Bundle.main.bundleURL.appendingPathComponent("Samples/paired16.wav")
+            let url = Bundle.main.bundleURL.appendingPathComponent("Samples/sample_noisy.wav")
             let audio = try ReuseAudioFile.read(url)
-            prepared = audio; sourceName = paired ? "品質比較用の音声ペア" : "ノイズを含むサンプル"
+            prepared = audio; sourceName = "ノイズを含むサンプル"
             let base = documents.appendingPathComponent(CommandLine.arguments.contains("--speed-run")
                 ? "SpeedRuns/\(Self.launchOptimization.rawValue)/\(paired ? "paired" : "sample")"
                 : CommandLine.arguments.contains("--playback-smoke") ? "PlaybackSmoke/audio"
@@ -395,7 +395,7 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
                 sourceURL = documents.appendingPathComponent("SpeedFixtures/\(probe).wav")
                 try ReuseAudioFile.write(samples,to:sourceURL)
             } else {
-                sourceURL = Bundle.main.bundleURL.appendingPathComponent("Samples/paired16.wav")
+                sourceURL = Bundle.main.bundleURL.appendingPathComponent("Samples/sample_noisy.wav")
             }
             let repeats = CommandLine.arguments.first { $0.hasPrefix("--repeat-sample=") }
                 .flatMap { Int($0.dropFirst("--repeat-sample=".count)) } ?? 1
@@ -410,7 +410,7 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
                 ?? (comparisonMode == .mlx ? "mlx_\(paired ? "paired" : "sample")" : paired ? "paired" : "sample")
             let label = basicLabel + (repeats > 1 ? "_repeat\(repeats)" : "")
             let root = documents.appendingPathComponent("SpeedCompare/\(Self.launchOptimization.rawValue)/\(label)")
-            prepared = audio; sourceName = paired ? "品質比較用の音声ペア" : "ノイズを含むサンプル"
+            prepared = audio; sourceName = "ノイズを含むサンプル"
             inputURL = root.appendingPathComponent("input.wav")
             try ReuseAudioFile.write(audio.samples, to: inputURL!)
             var rows = [ReuseMetrics](),participants = [String]()
@@ -572,7 +572,7 @@ extension LabModel {
             await refreshModelAssets()
             guard modelInstalled else { throw ReuseError.invalid("モデルの取り込みに失敗しました。") }
             let loaded = try await requireEngine()
-            let audio = try ReuseAudioFile.read(Bundle.main.bundleURL.appendingPathComponent("Samples/paired16.wav"))
+            let audio = try ReuseAudioFile.read(Bundle.main.bundleURL.appendingPathComponent("Samples/sample_noisy.wav"))
             let result = try await loaded.enhance(audio.samples, mode: .hybrid)
             try ReuseAudioFile.write(result.samples, to: documents.appendingPathComponent("ModelManagementSmoke/enhanced.wav"))
             try ReuseAudioFile.writeJSON(result.metrics, to: documents.appendingPathComponent("ModelManagementSmoke/metrics.json"))
@@ -631,7 +631,7 @@ extension LabModel {
             guard !denied.isInstalled else { throw ReuseError.invalid("未認証のモデルが使用可能になっています。") }
             events.append(Event(action: "unauthenticated-download-denied", installed: denied.isInstalled, bytes: denied.totalBytes))
             try await assets.remove()
-            let audio = try ReuseAudioFile.read(Bundle.main.bundleURL.appendingPathComponent("Samples/paired16.wav"))
+            let audio = try ReuseAudioFile.read(Bundle.main.bundleURL.appendingPathComponent("Samples/sample_noisy.wav"))
             var originalHash: String?
             for cycle in 1...2 {
                 status = "Hugging Faceから取得中 \(cycle)/2…"

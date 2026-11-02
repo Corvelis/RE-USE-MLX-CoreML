@@ -14,7 +14,9 @@ RTFは処理秒数を入力音声の秒数で割った値です。小さいほ�
 | モデル | 全30段、16個のFP32再帰状態、5秒窓、5％の重なり、元の時間・周波数解像度 |
 | 端末状態 | 低電力モードoff、熱状態nominal。MacはAC接続 |
 
-速度測定の7.92秒音声は[URGENT 2024の`fileid_26119`](https://huggingface.co/datasets/urgent-challenge/urgent2024_official)（CC BY-NC-SA 4.0）、品質測定のペアは[Edinburgh Noisy Speech Database](https://doi.org/10.7488/ds/2117)（CC BY 4.0）です。アプリの同梱サンプルは後者を使用します。
+速度測定の7.92秒音声は[URGENT 2024の`fileid_26119`](https://huggingface.co/datasets/urgent-challenge/urgent2024_official)（CC BY-NC-SA 4.0）、品質測定のペアは[Edinburgh Noisy Speech Database](https://doi.org/10.7488/ds/2117)（CC BY 4.0）です。
+
+同梱の`sample_noisy.wav`は、日本語音声と掃除機のノイズを含む10.8573125秒のオリジナル録音です。対応するクリーン正解音声はありません。以下の7.92秒の測定やclean / noisyペアによる品質測定とは別の入力です。
 
 ## iPhone 17 Pro / A19 Pro
 
@@ -36,6 +38,17 @@ GPU 8コア、メモリ24 GiB、macOS 27.2。
 | ANE + GPU・`foldSeparate` | 0.14692 | 0.14645〜0.14761 | 約1.16秒 |
 
 Macの自動選択は`warpFast`です。同じ比較での`warpFast`のRTF中央値はMLX GPUが0.20935、ANE + GPUが0.15852でした。表の設定には線形層の合成に伴う追加のFP16丸めがあり、利用時に明示指定します。[SDKの設定方法](SDK.md)を参照してください。
+
+## 同梱サンプルでの測定
+
+`sample_noisy.wav`（16 kHz・mono・10.8573125秒）をMacBook Air / M2で処理した結果です。各設定を1回準備実行後、`warpFast`と速度設定をAB / BA交互に5組実行しました。
+
+| モード・設定 | RTF中央値 | 最小〜最大 | `warpFast`のRTF中央値 |
+| --- | ---: | ---: | ---: |
+| MLX GPU・`foldShared` | 0.19912 | 0.19876〜0.20054 | 0.21130 |
+| ANE + GPU・`foldSeparate` | 0.15486 | 0.15461〜0.15591 | 0.16585 |
+
+同じモードの`warpFast`に対する追加相対RMSEは、`foldShared`が0.02333％、`foldSeparate`が0.04757％でした。これは最適化による波形の数値差で、聴感上の劣化率ではありません。
 
 ## 品質
 

@@ -60,10 +60,10 @@ xcrun swift build --build-system swiftbuild -c release --product reuse-probe
 
 ```sh
 xcrun swift run --build-system swiftbuild -c release reuse-probe \
-  ModelPack App/Samples/paired16.wav output mlx 3
+  ModelPack App/Samples/sample_noisy.wav output mlx 3
 ```
 
-この例は同梱のサンプル音声を処理します。モデルを別の場所に保存した場合は`ModelPack`を`manifest.json`のあるディレクトリに、手持ちの音声を試す場合は`App/Samples/paired16.wav`を入力ファイルに置き換えます。入力は16 kHz・monoへ変換され、最大5分まで読み込めます。引数`3`は準備実行1回の後に3回測定する指定です。出力先には各回のWAVと、RTFなどを含むJSONを保存します。
+この例は同梱のサンプル音声を処理します。モデルを別の場所に保存した場合は`ModelPack`を`manifest.json`のあるディレクトリに、手持ちの音声を試す場合は`App/Samples/sample_noisy.wav`を入力ファイルに置き換えます。入力は16 kHz・monoへ変換され、最大5分まで読み込めます。引数`3`は準備実行1回の後に3回測定する指定です。出力先には各回のWAVと、RTFなどを含むJSONを保存します。
 
 ANE + GPUで実行する場合は`mlx`を`hybrid`へ変更します。M2向けの速度設定を指定する例：
 
@@ -96,4 +96,10 @@ xcrun swift test --build-system swiftbuild -c release -j 4
 python3 test_model_assets.py
 ```
 
-GitHub Actionsでは、モデル管理のテスト、ライセンス通知、補助スクリプトとXcodeプロジェクトの生成を検証します。
+同梱サンプルの内容とメタデータを確認する場合：
+
+```sh
+python3 verify_sample.py
+```
+
+GitHub Actionsでは、モデル管理のテスト、同梱サンプルの整合性、ライセンス通知、補助スクリプトとXcodeプロジェクトの生成を検証します。

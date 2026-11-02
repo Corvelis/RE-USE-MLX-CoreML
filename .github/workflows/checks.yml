@@ -24,6 +24,8 @@ jobs:
           persist-credentials: false
       - name: Check license notices
         run: python3 make_notices.py --check
+      - name: Verify bundled sample audio
+        run: python3 verify_sample.py
       - name: Check Python and shell scripts
         run: |
           python3 - <<'PY'

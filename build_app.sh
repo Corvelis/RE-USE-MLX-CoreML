@@ -21,7 +21,7 @@ CHECK_DISK
 python3 make_notices.py --check
 REUSE_BUILD_DIR="$build_dir" python3 make_project.py
 app_product="$build_dir/$derived/Build/Products/Release-$sdk/ReuseLab.app"
-if [[ -d "$app_product/ModelPack" || -f "$app_product/Samples/noisy16.wav" ]]; then
+if [[ -d "$app_product/ModelPack" || -f "$app_product/Samples/noisy16.wav" || -f "$app_product/Samples/paired16.wav" || -f "$app_product/Samples/paired16_clean.wav" ]]; then
   # Xcode can retain removed resources in an old product. Recreate this product.
   python3 - "$app_product" <<'CLEAN_PRODUCT'
 import shutil,sys

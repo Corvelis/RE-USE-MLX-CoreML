@@ -96,4 +96,4 @@ SDK、サンプル、テスト、利用ガイド、ライセンスを含む`dist
 
 ## ライセンスと出典
 
-SDKとサンプルアプリのコードは[Apache-2.0](LICENSE)、モデルはOpenMDW-1.1、同梱音声はCC BY 4.0です。[配布時の条件](docs/LICENSING.md)と[Third-Party Notices](App/Notices.txt)を参照してください。アプリ内の情報ボタンからも全文を確認できます。
+SDK・サンプルアプリのコードと同梱音声は[Apache-2.0](LICENSE)、モデルはOpenMDW-1.1です。[音声の表示](licenses/Audio-Samples.txt)、[配布時の条件](docs/LICENSING.md)、[Third-Party Notices](App/Notices.txt)も確認できます。アプリ内の情報ボタンからも全文を表示します。

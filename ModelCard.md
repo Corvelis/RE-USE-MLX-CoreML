@@ -99,4 +99,4 @@ The full measurement conditions and profile options are included in the SDK docu
 
 Model materials are distributed under OpenMDW-1.1. Preserve the license and applicable copyright/origin notices when redistributing them. Source model: [NVIDIA-NemotronLabs-RE-USE](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE).
 
-The companion SDK code is Apache-2.0 and its bundled demonstration audio is CC BY 4.0. See `LICENSE`, `NOTICE` and `licenses` inside `ReuseKit.zip` for their respective terms.
+The companion SDK code and bundled original sample recording are Apache-2.0. See `LICENSE`, `NOTICE` and `licenses/Audio-Samples.txt` inside `ReuseKit.zip` for the license and attribution. Other bundled components retain the terms documented in `licenses`.

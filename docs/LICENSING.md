@@ -12,7 +12,7 @@ SDKとサンプルアプリのコードは[Apache License 2.0](../LICENSE)で公
 | Metal-cpp | Apache-2.0 | [原文](../licenses/Metal-CPP.txt)を参照 |
 | fmt / nlohmann/json | MIT | 許諾文と組み込まれたコードの著作権表示を保持 |
 | MLX内部の第三者コード | BSD-2-Clause / BSD-3-Clause / zlib / Apache-2.0など | [第三者表示](../licenses/MLX-Third-Party.txt)を参照 |
-| サンプル音声 | CC BY 4.0 | [作者・出典・加工内容](../licenses/Audio-Samples.txt)を保持 |
+| サンプル音声 | Apache-2.0 | [LICENSE](../LICENSE)と[音声の表示](../licenses/Audio-Samples.txt)を保持 |
 
 ## アプリやライブラリとして配布する
 
@@ -28,6 +28,6 @@ OpenMDW-1.1は商用利用、改変、再配布を許可し、再配布時にラ
 
 ## サンプル音声
 
-同梱音声はCassia Valentini-Botinhao / University of EdinburghのNoisy Speech Databaseを16 kHzへ変換したもので、CC BY 4.0です。音声を再配布する場合は作者、出典、ライセンス、加工内容を表示します。この音声からノイズ除去した音声を配布する場合も、元の出典と処理したことを表示してください。
+同梱の`sample_noisy.wav`は、日本語音声と掃除機のノイズを含むオリジナル録音で、Apache-2.0で配布します。16 kHz・mono・Float32 WAVに変換した10.8573125秒の音声です。再配布時は[LICENSE](../LICENSE)と[音声の表示](../licenses/Audio-Samples.txt)を保持し、改変した場合はその旨を表示してください。
 
 モデルのダウンロード設定は[モデル管理ガイド](MODELS.md)を参照してください。
