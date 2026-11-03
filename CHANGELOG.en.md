@@ -2,7 +2,7 @@
 
 [日本語](CHANGELOG.md) | English
 
-## 0.2.0 — Unreleased
+## 0.2.0 — 2026-11-04
 
 - Added video import, noise reduction, comparison playback and MOV export to the iPhone app. Import videos up to five minutes long from Photos or Files.
 - Switch between original and enhanced audio without changing the video playback position. Save enhanced videos to Photos or share them.
