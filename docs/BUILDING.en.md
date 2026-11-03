@@ -104,4 +104,10 @@ To verify the bundled sample's contents and metadata:
 python3 verify_sample.py
 ```
 
-GitHub Actions checks model management tests, bundled sample integrity, license notices, helper scripts and Xcode project generation.
+To check video import and export, install FFmpeg on the Mac and run the command below. The checks generate a short picture and tone, then verify audio timing and level, video and orientation preservation, the comparison player, cancellation and working-copy cleanup.
+
+```sh
+python3 test_video_media.py
+```
+
+GitHub Actions checks model management, video import and export, bundled sample integrity, license notices, helper scripts and Xcode project generation.

@@ -40,7 +40,7 @@ The converted MLX and Core ML models retain OpenMDW-1.1. When redistributing mod
 | Architecture | All 30 stages, full time/frequency resolution, 16 FP32 recurrent states |
 | Model assets | 38 files, 54,206,689 bytes |
 
-ReuseKit can read mono/stereo audio files and resample them to 16 kHz. The iPhone sample supports importing or recording up to five minutes, comparison playback at the same position, and Float32 WAV export.
+ReuseKit can read mono/stereo audio files and resample them to 16 kHz. The iPhone sample supports importing video or audio and recording up to five minutes. It provides comparison playback at the same position, MOV export with enhanced audio, and separate Float32 WAV export.
 
 ## Swift SDK and samples
 
@@ -81,7 +81,7 @@ For a private repository, pass a Hugging Face token with read access through the
 - **MLX GPU:** runs the full model on the GPU. SSM projections use FP16; recurrent state and normalization use FP32.
 - **Core ML + MLX:** runs CNNs through Core ML with `cpuAndNeuralEngine`, and Mamba stages through MLX. CNNs and boundary tensors use FP16. Actual placement is determined by Core ML. Windows without a matching CNN package use MLX.
 
-The checkpoint was converted from NVIDIA's revision `31f82f2efad1095034492f236e8dac9239ba713b`, without additional training. Mixed precision and fused kernels can introduce numerical differences. The recommended profile selects a supported GPU implementation; M2's folded linear-layer profiles are explicit options.
+The checkpoint was converted from NVIDIA's revision `31f82f2efad1095034492f236e8dac9239ba713b`, without additional training. Mixed precision and fused kernels can introduce numerical differences. The recommended profile selects a supported GPU implementation and protects sparse audio against scan overflow using BF16 on supported GPUs, with FP32 fallback for nonfinite results. All 30 stages and 16 recurrent states are retained. M2's folded linear-layer profiles are explicit options.
 
 ## Measured speed and quality
 
@@ -96,6 +96,8 @@ RTF is processing time divided by input duration; lower is faster.
 Measured on iOS/macOS 27.2 using 16 kHz mono, 7.92-second audio, one warmup per profile and five interleaved AB/BA pairs. Timings include STFT, all model stages, iSTFT, overlap-add and GPU completion. File decoding, resampling, model loading, initial compilation and saving are separate costs. Device temperature, input duration and power state affect performance.
 
 On one clean/noisy speech pair, the A19 Pro hybrid profile changed STOI from 0.94836095 to 0.94835503 compared with `warpFast`; the M2 hybrid profile changed it from 0.94833868 to 0.94833576. These measurements cover that pair and synthetic probes. M2's folded profile produced 2.24% additional relative RMSE on a synthetic impulse. Waveform differences depend on the input and are not a percentage of perceived degradation.
+
+Version 0.2.0 was also checked on 26.605 seconds of video audio using ANE + GPU on iPhone 17 Pro / A19 Pro. Six interleaved AB/BA pairs after warmup gave median RTF 0.09979 for the fixed version and mean RTFs of 0.09809 before and 0.09900 after the overflow fix. These timings exclude video import and export. For sparse speech from the bundled recording, additional relative RMSE against a path retaining FP32 scan outputs was 0.1851%.
 
 The full measurement conditions and profile options are included in the SDK documentation. This is an offline enhancement model, not a streaming microphone API.
 

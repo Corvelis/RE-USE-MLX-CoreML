@@ -2,7 +2,7 @@
 
 [日本語](BENCHMARKS.md) | English
 
-RTF is processing time divided by input duration; lower is faster. The results below were measured on November 2, 2026.
+RTF is processing time divided by input duration; lower is faster. The initial measurements were taken on November 2, 2026; the version 0.2.0 video-audio checks were run on November 4.
 
 ## Measurement conditions
 
@@ -66,6 +66,16 @@ On one clean/noisy speech pair with a clean reference, the ANE + GPU profiles we
 Both metrics changed only slightly on this pair. On the 7.92-second recording, additional relative RMSE was approximately 0.0578% on A19 Pro and 0.0571% on M2. Evaluation covered this pair, the 7.92-second recording, and synthetic silence, impulse, low-amplitude and short inputs.
 
 On a synthetic impulse, M2's `foldSeparate` produced 2.24% relative RMSE and a maximum amplitude difference of 0.000977. To reduce additional rounding, select `residualFuse`; its output matched `warpFast` on the M2 7.92-second evaluation recording. Waveform RMSE is not a percentage of perceived degradation, and quality depends on the input.
+
+## Video audio and silent sections (0.2.0)
+
+A 26.605-second screen recording was processed on an iPhone 17 Pro / A19 Pro, iOS 27.2, using ANE + GPU with automatic profile selection. After one warmup per setting, six interleaved AB / BA pairs gave mean RTFs of 0.09809 before the fix and 0.09900 after it. The fixed version's median was 0.09979, with a range of 0.09333–0.10366. Low Power Mode was off and thermal state was nominal.
+
+In an import-to-export video check, noise reduction took 2.578 seconds, or RTF 0.09689. Video import and export time are excluded.
+
+The first, mostly silent window used BF16; no FP32 retry was needed. The fix removed unwanted noise from silent sections caused by internal overflow. For the same input, output after five seconds was bit-identical to the previous implementation. Output on the bundled recording was also bit-identical.
+
+For a five-second input containing one second of speech from the bundled recording and silence, additional relative RMSE against a reference path retaining FP32 scan outputs was 0.1851%, with STOI 0.99999949 between the two outputs. These measure differences caused by the numeric format, not enhancement quality against clean ground truth.
 
 ## Measuring your workload
 

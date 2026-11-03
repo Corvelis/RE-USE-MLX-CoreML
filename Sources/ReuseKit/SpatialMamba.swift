@@ -6,6 +6,8 @@ import MLX
 import MLXNN
 
 public enum ReuseOptimization: String, Codable, Sendable, CaseIterable {
+    case wideScan
+    case naxRangeShared16
     case baseline, splitGemm, paddedGemm, parallelConv, simd4, simd8, exp2, fusedFMA, vector4, halfVector, halfMerge, folded, foldedVector, fusedMerge, staged2, staged5, staged10, warpNorm, fastNonlinear, warpFast
     case coarseTime, coarseFreq, coarse2D, coarseMiddle
     case innerTime, innerFreq, inner2D, innerTimeRate, inner2DRate
@@ -33,10 +35,11 @@ public enum ReuseOptimization: String, Codable, Sendable, CaseIterable {
     var isCoarse: Bool { [.coarseTime,.coarseFreq,.coarse2D,.coarseMiddle].contains(self) }
     var isInner: Bool { [.innerTime,.innerFreq,.inner2D,.innerTimeRate,.inner2DRate,.orthogonal,.orthogonalMean].contains(self) }
     var portableFull: Bool { [.metalFull8,.metalFull16,.metalFull16Shared].contains(self) }
-    var sharedCNN: Bool { [.foldShared,.metalFull16Shared,.naxShared32,.naxFullShared16].contains(self) }
-    var fullInput: Bool { portableFull || [.naxFull16,.naxFull16Unroll,.naxFullShared16].contains(self) }
+    var wideRange: Bool { self == .naxRangeShared16 }
+    var sharedCNN: Bool { wideRange || [.foldShared,.metalFull16Shared,.naxShared32,.naxFullShared16].contains(self) }
+    var fullInput: Bool { wideRange || portableFull || [.naxFull16,.naxFull16Unroll,.naxFullShared16].contains(self) }
     var directNAX: Bool { (fullInput && !portableFull) || [.naxDirect16,.naxDirect32,.naxDirect16Unroll,.naxDirect32Unroll,.naxShared32].contains(self) }
-    var unrollCore: Bool { [.metalFull16Shared,.fused16UnrollFold,.naxDirect16Unroll,.naxDirect32Unroll,.naxFull16Unroll,.naxShared32,.naxFullShared16].contains(self) }
+    var unrollCore: Bool { wideRange || [.metalFull16Shared,.fused16UnrollFold,.naxDirect16Unroll,.naxDirect32Unroll,.naxFull16Unroll,.naxShared32,.naxFullShared16].contains(self) }
     var usesNAX: Bool { directNAX || [.nax16Fold,.nax32Fold].contains(self) }
     var isCore: Bool { portableFull || usesNAX || [.fusedCore,.fusedCoreFold,.fused16,.fused16Fold,.fused32,.fused32Fold,.fused16UnrollFold].contains(self) }
     var coreFold: Bool { portableFull || usesNAX || [.fusedCoreFold,.fused16Fold,.fused32Fold,.fused16UnrollFold].contains(self) }
@@ -142,13 +145,14 @@ private final class SpatialKernels {
             outputNames: ["out"], source: SpeedKernelSource.warpNorm)
         normResidual = MLXFast.metalKernel(name:"reuse_norm_residual64",inputNames:["input","scale","offset","residual"],
             outputNames:["out"],source:NextKernelSource.normResidual)
-        foldNorm = MLXFast.metalKernel(name:"reuse_fold_norm64",inputNames:["y","r","x","bias","scale","offset"],
-            outputNames:["out"],source:NextKernelSource.foldNorm)
+        let foldSource = NextKernelSource.foldNorm
+        foldNorm = MLXFast.metalKernel(name:"reuse_fold_norm64_\(mode.rawValue)",inputNames:["y","r","x","bias","scale","offset"],
+            outputNames:["out"],source:foldSource)
         let optimizedCore = mode.isCore && mode.coreRows != 8
         fusedCore = MLXFast.metalKernel(name:"reuse_fused_core_\(suffix)_\(mode.rawValue)",
             inputNames:[mode.fullInput ? "x" : "xz","weight","bias","A_log","dt_weight","dt_bias","Dparam","x_weight","out_weight"] + (mode.fullInput ? ["input_weight"] : []),
-            outputNames:["out"],source:mode.portableFull ? FusedMambaSource.portableSource(unroll:mode.unrollCore) : mode.fullInput ? FusedMambaSource.fullSource(unroll:mode.unrollCore) : mode.directNAX ? FusedMambaSource.directSource(unroll:mode.unrollCore) : optimizedCore ? FusedMambaSource.configured(unroll:mode.unrollCore,nax:mode.usesNAX) : FusedMambaSource.source,
-            header:"#include <metal_simdgroup_matrix>\n" + (mode.usesNAX ? "#include <MetalPerformancePrimitives/MetalPerformancePrimitives.h>\n" : "") + axis + sigmoid + scanHeader + "\n" + (mode.portableFull ? FusedMambaSource.portableHelper(rows:mode.coreRows) + "\n" + FusedMambaSource.portableInput : (mode.fullInput ? FusedMambaSource.inputHelper + "\n" : "") + (optimizedCore ? (mode.directNAX ? FusedMambaSource.directHelper(rows:mode.coreRows) : mode.usesNAX ? FusedMambaSource.naxHelper(rows:mode.coreRows) : FusedMambaSource.helper(rows:mode.coreRows)) : "")))
+            outputNames:["out"],source:mode.wideRange ? FusedMambaSource.wideRangeSource() : mode.portableFull ? FusedMambaSource.portableSource(unroll:mode.unrollCore) : mode.fullInput ? FusedMambaSource.fullSource(unroll:mode.unrollCore) : mode.directNAX ? FusedMambaSource.directSource(unroll:mode.unrollCore) : optimizedCore ? FusedMambaSource.configured(unroll:mode.unrollCore,nax:mode.usesNAX) : FusedMambaSource.source,
+            header:"#include <metal_simdgroup_matrix>\n" + (mode.usesNAX ? "#include <MetalPerformancePrimitives/MetalPerformancePrimitives.h>\n" : "") + axis + sigmoid + scanHeader + "\n" + (mode.portableFull ? FusedMambaSource.portableHelper(rows:mode.coreRows) + "\n" + FusedMambaSource.portableInput : (mode.fullInput ? FusedMambaSource.inputHelper + "\n" : "") + (optimizedCore ? (mode.directNAX ? FusedMambaSource.directHelper(rows:mode.coreRows) : mode.usesNAX ? FusedMambaSource.naxHelper(rows:mode.coreRows) : FusedMambaSource.helper(rows:mode.coreRows)) : "")) + (mode.wideRange ? "\n" + FusedMambaSource.wideOutputHelper : ""))
     }
 }
 
@@ -192,7 +196,7 @@ final class BidirectionalMamba: Module, UnaryLayer {
             separateWeight = (stacked([matmul(left,forward.outProj.weight.asType(.float32)),
                 matmul(right,backward.outProj.weight.asType(.float32))])/4).asType(.float16)
             residualWeight = ((left+right)/4).asType(.float16)
-            tileSeparate = contiguous(separateWeight!.swappedAxes(-1,-2))
+            tileSeparate = contiguous(separateWeight!.swappedAxes(-1,-2).asType(mode.wideRange ? .float32 : .float16))
             eval(separateWeight!,residualWeight!)
             eval(tileSeparate!)
         }
@@ -210,8 +214,9 @@ final class BidirectionalMamba: Module, UnaryLayer {
         let grid = (2*sequences*d, 1, 1)
         let projectedOut: MLXArray
         if mode.isCore {
-            projectedOut = kernels.fusedCore([xz,w.conv,w.bias,w.aLog,w.dt,w.deltaBias,w.skip,w.tileProjection,tileSeparate ?? w.tileOutput] + (mode.fullInput ? [tileInput!] : []),
-                grid:grid,threadGroup:(256,1,1),outputShapes:[[2,b,t,f,c]],outputDTypes:[.float16])[0]
+            let packed = kernels.fusedCore([xz,w.conv,w.bias,w.aLog,w.dt,w.deltaBias,w.skip,w.tileProjection,tileSeparate ?? w.tileOutput] + (mode.fullInput ? [tileInput!] : []),
+                grid:grid,threadGroup:(256,1,1),outputShapes:[[2,b,t,f,c]],outputDTypes:mode.wideRange ? [.bfloat16] : [.float16])
+            projectedOut = packed[0]
             if let residualWeight {
                 let residual = matmul(x.asType(.float16),residualWeight.T)
                 return kernels.foldNorm([projectedOut,residual,x,outputProj.bias!,norm.weight!,norm.bias!],
@@ -233,7 +238,8 @@ final class BidirectionalMamba: Module, UnaryLayer {
         }
         let lanes = mode == .simd4 ? 4 : mode == .simd8 ? 8 : 1
         let y = kernels.scan([xz, w.aLog, projected, w.dt, w.deltaBias, u, w.skip],
-            grid: (grid.0*lanes, 1, 1), threadGroup: (mode.threadCount, 1, 1), outputShapes: [u.shape], outputDTypes: [.float16])[0]
+            grid: (grid.0*lanes, 1, 1), threadGroup: (mode.threadCount, 1, 1), outputShapes: [u.shape],
+            outputDTypes: [mode == .wideScan ? .float32 : .float16])[0]
         if let separateWeight,let residualWeight {
             let projected = matmul(y.reshaped(2,p,d),separateWeight.swappedAxes(-1,-2)).reshaped(2,b,t,f,c)
             let residual = matmul(x.asType(.float16),residualWeight.T)

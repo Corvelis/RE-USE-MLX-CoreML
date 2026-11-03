@@ -6,6 +6,58 @@
 import Foundation
 
 enum FusedMambaSource {
+    /// BF16 retains FP32's exponent range at the scan/output boundary.
+    /// Projection accumulation and the following normalization remain FP32.
+    static func wideRangeSource() -> String {
+        var value = fullSource(unroll: true)
+        value = value.replacingOccurrences(of: "half result=0;", with: "float result=0;")
+            .replacingOccurrences(of: "result=half(y);", with: "result=y;")
+            .replacingOccurrences(of: "tile[j*256+d]=result;", with: "((threadgroup bfloat*)tile)[j*256+d]=bfloat(result);")
+        value = value.replacingOccurrences(of: "projected,out,group", with: "projected,(device half*)out,group")
+        let start=value.range(of:"    reuse_direct<false>")!
+        value.replaceSubrange(start.lowerBound..<value.endIndex,with:"""
+            reuse_bfloat_output((threadgroup const bfloat*)tile,out_weight+direction*256*64,out,group,begin,length,batch,height,width,sequence,direction,positions);
+            threadgroup_barrier(mem_flags::mem_threadgroup);
+        }
+        """)
+        return value
+    }
+
+    static let wideOutputHelper = #"""
+    inline void reuse_bfloat_output(threadgroup const bfloat* tile,device const float* w,device bfloat* out,uint group,uint begin,uint length,uint batch,uint height,uint width,uint sequence,uint direction,uint positions){
+        if(group>=MAMBA_ROWS/8)return;
+        uint lane=__metal_get_thread_index_in_simdgroup(ushort()),q=lane>>2;
+        uint fm=(q&4)|((lane>>1)&3),fn=((q&2)|(lane&1))*4;
+        uint rm=(group/2)*16,cn=(group%2)*32;
+        constexpr auto desc=mpp::tensor_ops::matmul2d_descriptor(16,32,16,false,false,true,mpp::tensor_ops::matmul2d_descriptor::mode::multiply_accumulate);
+        mpp::tensor_ops::matmul2d<desc,metal::execution_simdgroup> op;
+        auto a=op.get_left_input_cooperative_tensor<bfloat,float,float>();
+        auto b=op.get_right_input_cooperative_tensor<bfloat,float,float>();
+        auto c=op.get_destination_cooperative_tensor<metal::remove_addrspace_t<decltype(a)>,metal::remove_addrspace_t<decltype(b)>,float>();
+        #pragma clang loop unroll(full)
+        for(uint i=0;i<16;i++)c[i]=0.0f;
+        for(uint k=0;k<256;k+=16){
+            #pragma clang loop unroll(full)
+            for(uint i=0;i<8;i++){
+                uint r=fm+(i/4)*8,col=fn+i%4;
+                a[i]=tile[(rm+r)*256+k+col];
+                b[i]=w[(k+r)*64+cn+col];b[i+8]=w[(k+r)*64+cn+16+col];
+            }
+            op.run(a,b,c);
+        }
+        #pragma clang loop unroll(full)
+        for(uint i=0;i<8;i++){
+            uint r=rm+fm+(i/4)*8,col=cn+fn+i%4;
+            if(begin+r<length){
+                uint step=direction==0?begin+r:length-1-begin-r;
+                uint row=TIME_AXIS?step:sequence%height,column=TIME_AXIS?sequence%width:step;
+                uint ix=(direction*positions+(batch*height+row)*width+column)*64+col;
+                out[ix]=bfloat(c[i]);out[ix+16]=bfloat(c[i+8]);
+            }
+        }
+    }
+    """#
+
     // Conventional SIMD-group MMA path for GPUs without neural accelerators.
     static let portableInput = #"""
     inline void reuse_input(threadgroup const half* tile,device const half* w,threadgroup half* output,uint group){

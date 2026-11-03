@@ -10,7 +10,7 @@ FILES = (
     "LICENSE", "NOTICE", ".gitignore",
     "build_app.sh", "install_app.sh", "make_project.py", "make_model_catalog.py",
     "make_notices.py", "make_icon.swift", "test_model_assets.py", "export_source.py",
-    "prepare_model_release.py", "verify_sample.py", "ModelCard.md",
+    "prepare_model_release.py", "verify_sample.py", "test_video_media.py", "ModelCard.md",
 )
 DIRECTORIES = ("Sources", "Tests", "App", "docs", "licenses", ".github")
 

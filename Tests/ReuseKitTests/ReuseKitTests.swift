@@ -4,6 +4,45 @@ import MLX
 @testable import ReuseKit
 
 final class ReuseKitTests: XCTestCase {
+    func testNonFiniteHeadsCannotBeHiddenByMagnitudeClamping() throws {
+        try Device.withDefaultDevice(.gpu) {
+            let invalid = MLXArray.full([1, 321, 201], values: MLXArray(Float.nan))
+            let phase = MLXArray.zeros([1, 321, 201])
+            let output = Spectral.synthesis(invalid, phase, samples: 16000)
+            XCTAssertEqual(output.count, 16000)
+            XCTAssertTrue(output.contains { !$0.isFinite })
+        }
+    }
+
+    func testScanPreservesRangeBeforeOutputProjection() throws {
+        try Device.withDefaultDevice(.gpu) {
+            // The normalized model output is small even when the preceding
+            // state contraction exceeds FP16 range (isolated sounds + silence).
+            var gate = [Float16](repeating: 0, count: 1024)
+            for i in 256..<512 { gate[i] = 1; gate[i + 512] = 1 }
+            var projected = [Float16](repeating: 0, count: 72)
+            for direction in 0..<2 {
+                for i in 4..<36 { projected[direction * 36 + i] = 1 }
+            }
+            let kernel = MLXFast.metalKernel(name: "reuse_test_scan_range",
+                inputNames: ["xz", "A_log", "projected", "dt_weight", "dt_bias", "u", "Dparam"],
+                outputNames: ["out"], source: ReuseKernelSource.scan,
+                header: "constant bool TIME_AXIS=true;\n" + ReuseKernelSource.scanHeader)
+            let shape = [2, 1, 1, 1, 256]
+            let result = kernel([
+                MLXArray(gate).reshaped(1, 1, 1, 1024), MLXArray.zeros([512, 16]),
+                MLXArray(projected).reshaped(2, 1, 1, 1, 36), MLXArray.zeros([512, 4], dtype: .float16),
+                MLXArray.zeros([512]), MLXArray.full(shape, values: MLXArray(Float(30000)), dtype: .float16),
+                MLXArray.zeros([512]),
+            ], grid: (512, 1, 1), threadGroup: (256, 1, 1), outputShapes: [shape], outputDTypes: [.float32])[0]
+            let expected = 16 * log(Float(2)) * 30000 / (1 + exp(Float(-1)))
+            let values = result.asArray(Float.self)
+            XCTAssertTrue(values.allSatisfy(\.isFinite))
+            XCTAssertGreaterThan(values[0], Float(Float16.greatestFiniteMagnitude))
+            XCTAssertLessThan(values.map { abs($0 - expected) }.max()!, expected * 0.0001)
+        }
+    }
+
     func testSTFTRoundTripAndUncoveredTail() throws {
         try Device.withDefaultDevice(.gpu) {
             let input: [Float] = (0..<16037).map { index in
