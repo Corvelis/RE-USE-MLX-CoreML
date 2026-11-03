@@ -14,7 +14,7 @@ To add `ReuseKit` from GitHub to another Swift Package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Corvelis/RE-USE-MLX-CoreML.git", from: "0.1.0")
+    .package(url: "https://github.com/Corvelis/RE-USE-MLX-CoreML.git", from: "0.2.0")
 ],
 targets: [
     .executableTarget(name: "MyApp", dependencies: [
@@ -88,6 +88,8 @@ let result = try await engine.enhance(audio.samples, mode: .hybrid)
 ```
 
 Each call processes the supplied audio offline using five-second windows with 5% overlap. A low RTF does not make this a real-time streaming API.
+
+On supported GPUs, sparse inputs use BF16 scan outputs to prevent overflow. Windows with nonfinite inference results are retried with FP32 scan outputs. In the measurement JSON, `wideRangeWindows` counts windows using BF16 and `precisionFallbackWindows` counts retries. Neither reduces the model's stages or recurrent states.
 
 ## Downloading and deleting models
 

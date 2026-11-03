@@ -2,6 +2,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import ReuseKit
+import AVKit
+import PhotosUI
 
 struct LabView: View {
     @ObservedObject var model: LabModel
@@ -10,6 +12,7 @@ struct LabView: View {
     @State private var exportingWAV = false
     @State private var exportDocument: WAVExport?
     @State private var deletingModel = false
+    @State private var selectedVideo: PhotosPickerItem?
     private let accent = Color(red: 0.05, green: 0.57, blue: 0.55)
 
     var body: some View {
@@ -47,11 +50,14 @@ struct LabView: View {
                 }
             }
             .tint(accent)
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.audio]) { result in
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.audio, .movie]) { result in
                 switch result {
-                case .success(let url): model.importAudio(url)
+                case .success(let url): model.importMedia(url)
                 case .failure(let error): model.error = error.localizedDescription
                 }
+            }
+            .onChange(of: selectedVideo) { _, selection in
+                if let selection { model.importVideo(selection); selectedVideo = nil }
             }
             .fileExporter(isPresented: $exportingWAV, document: exportDocument,
                           contentType: .wav, defaultFilename: "RE-USE_ノイズ除去後.wav") { result in
@@ -129,19 +135,25 @@ struct LabView: View {
             }
             Text("声を、もう少しクリアに。")
                 .font(.system(size: 28, weight: .bold, design: .rounded))
-            Text("NVIDIA RE-USEのノイズ除去を聴き比べ、\nこのiPhoneでの処理速度を測れます。")
+            Text("NVIDIA RE-USEで動画や音声のノイズを除去し、\n処理前後を聴き比べられます。")
                 .font(.subheadline).foregroundStyle(.secondary)
         }
     }
 
     private var sourceCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label("試す音声", systemImage: "waveform").font(.headline)
+            Label("試す動画・音声", systemImage: "waveform").font(.headline)
             HStack(spacing: 8) {
                 sourceButton("サンプル", icon: "play.square", action: model.useSample)
                     .disabled(model.recording)
                 sourceButton("ファイル", icon: "folder", action: { importing = true })
                     .disabled(model.recording)
+                PhotosPicker(selection: $selectedVideo, matching: .videos, preferredItemEncoding: .current) {
+                    VStack(spacing: 7) {
+                        Image(systemName: "film").font(.system(size: 19, weight: .medium))
+                        Text("動画").font(.caption.weight(.semibold))
+                    }.frame(maxWidth: .infinity, minHeight: 52).padding(.vertical, 3)
+                }.buttonStyle(.bordered).disabled(model.recording).accessibilityIdentifier("source_動画")
                 sourceButton(model.recording ? "停止" : "録音", icon: model.recording ? "stop.fill" : "mic", action: model.toggleRecording)
             }
             .disabled(model.busy)
@@ -158,7 +170,11 @@ struct LabView: View {
                 HStack {
                     Text(String(format: "%.2f秒", prepared.info.preparedSeconds))
                     Spacer()
-                    Text(prepared.info.resampled ? String(format: "%.0f → 16,000 Hz", prepared.info.sourceSampleRate) : "16,000 Hz")
+                    if let video = model.videoSource {
+                        Label(String(format: "%.0f × %.0f", video.displaySize.width, video.displaySize.height), systemImage: "film")
+                    } else {
+                        Text(prepared.info.resampled ? String(format: "%.0f → 16,000 Hz", prepared.info.sourceSampleRate) : "16,000 Hz")
+                    }
                 }.font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 if prepared.info.sourceChannels > 1 {
                     Text("stereoをmonoへ変換しました。")
@@ -166,7 +182,7 @@ struct LabView: View {
                 }
                 Waveform(samples: prepared.samples, color: accent).frame(height: 50)
             } else {
-                Text("ファイル・録音とも最大5分。\n読み込んだ音声は16 kHz・monoへ変換します。")
+                Text("動画・音声・録音とも最大5分。\n動画は音声のノイズを除去して保存できます。")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }.card()
@@ -236,8 +252,30 @@ struct LabView: View {
                 Text(String(format: "%.2f秒で処理", (model.medianRTF ?? result.metrics.rtf)*result.metrics.inputSeconds))
                     .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
             }
-            Waveform(samples: result.samples, color: accent).frame(height: 60)
-            comparisonPlayback(duration: result.metrics.inputSeconds)
+            if let comparison = model.videoComparison {
+                VideoPlayer(player: comparison.player)
+                    .frame(height: 360).clipShape(RoundedRectangle(cornerRadius: 12))
+                    .accessibilityIdentifier("videoPreview")
+                comparisonPicker
+                Text("再生中も、同じ位置のまま音声を切り替えられます。")
+                    .font(.caption).foregroundStyle(.secondary)
+                if let url = model.videoOutputURL {
+                    Text("保存形式：MOV").font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 20) {
+                        Button { model.saveVideoToPhotos() } label: {
+                            Label(model.savingVideo ? "保存中…" : "写真に保存", systemImage: "square.and.arrow.down")
+                        }.disabled(model.savingVideo).accessibilityIdentifier("saveVideo")
+                        ShareLink(item: url) { Label("動画を共有", systemImage: "square.and.arrow.up") }
+                            .accessibilityIdentifier("shareVideo")
+                    }.font(.subheadline)
+                }
+                if let message = model.videoSaveMessage {
+                    Text(message).font(.caption).foregroundStyle(accent)
+                }
+            } else {
+                Waveform(samples: result.samples, color: accent).frame(height: 60)
+                comparisonPlayback(duration: result.metrics.inputSeconds)
+            }
             Divider()
             HStack {
                 Text(String(format: "モデル準備 %.2f秒", result.metrics.modelLoadSeconds))
@@ -263,11 +301,7 @@ struct LabView: View {
 
     private func comparisonPlayback(duration: Double) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("聴き比べ", selection: Binding(
-                get: { model.playbackProcessed }, set: { model.selectPlayback(processed: $0) })) {
-                Text("ノイズあり").tag(false)
-                Text("ノイズ除去後").tag(true)
-            }.pickerStyle(.segmented).accessibilityIdentifier("playbackSource")
+            comparisonPicker
             HStack(spacing: 14) {
                 Button { model.togglePlayback() } label: {
                     Label(model.playbackIsPlaying ? "一時停止" : "再生",
@@ -286,6 +320,15 @@ struct LabView: View {
             Text("再生中も、同じ位置のまま切り替えられます。")
                 .font(.caption).foregroundStyle(.secondary)
         }.disabled(model.outputURL == nil || model.busy || model.recording)
+    }
+
+    private var comparisonPicker: some View {
+        Picker("聴き比べ", selection: Binding(
+            get: { model.playbackProcessed }, set: { model.selectPlayback(processed: $0) })) {
+            Text("ノイズあり").tag(false)
+            Text("ノイズ除去後").tag(true)
+        }.pickerStyle(.segmented).accessibilityIdentifier("playbackSource")
+            .disabled(model.busy || model.recording)
     }
 
     private var notices: some View {

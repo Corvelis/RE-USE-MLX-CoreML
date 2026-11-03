@@ -37,7 +37,7 @@ MLX Swift is pinned to 0.33.0. Use the Simulator to preview the interface and a 
 
 ## Using the Swift SDK
 
-In Xcode's “Add Package Dependencies,” add version `0.1.0` of `https://github.com/Corvelis/RE-USE-MLX-CoreML.git` and select `ReuseKit`. After downloading the [model files](docs/BUILDING.en.md#mac-command-line-sample), process an audio file as follows:
+In Xcode's “Add Package Dependencies,” add version `0.2.0` of `https://github.com/Corvelis/RE-USE-MLX-CoreML.git` and select `ReuseKit`. After downloading the [model files](docs/BUILDING.en.md#mac-command-line-sample), process an audio file as follows:
 
 ```swift
 import ReuseKit
@@ -61,14 +61,16 @@ The sample app's interface is in Japanese. The button labels below match those s
 Before building, review the [model source and access settings](docs/MODELS.en.md), then follow the [build instructions](docs/BUILDING.en.md) to install the app.
 
 1. Tap “モデルをダウンロード” (Download model). Once downloaded, the model works offline.
-2. Select audio with “ファイル” (File) or record with the microphone. Both support up to five minutes.
+2. Choose a video from Photos with “動画” (Video), import video or audio with “ファイル” (File), or record with the microphone. Each supports up to five minutes.
 3. Select a processing mode and tap “ノイズを除去” (Remove noise).
 4. Play the result. Switch between “ノイズあり” (Original) and “ノイズ除去後” (Enhanced) without changing the playback position.
-5. Export the enhanced audio with “WAVを保存” (Save WAV) or “共有” (Share).
+5. Save the enhanced video as MOV with “写真に保存” (Save to Photos) or “動画を共有” (Share video). Use “WAVを保存” (Save WAV) or “共有” (Share) to export the enhanced audio separately.
 
-Input is converted to 16 kHz mono. Output is 16 kHz mono Float32 WAV. “3回でRTFを測る” (Measure RTF over three runs) performs one warmup and three measured runs; you can share the resulting JSON. Recording, playback, processing and downloads stop when the app moves to the background.
+The saved video preserves the original picture and orientation and includes the enhanced audio. See the [video guide](docs/VIDEO.en.md) for import, output formats and Photos access.
 
-“モデルを削除” (Delete model) removes the model files, partial downloads and Core ML compilation caches. Recordings, enhanced WAV files and measurement results are retained. Download the model again to resume enhancement.
+Input audio is converted to 16 kHz mono. Output is 16 kHz mono Float32 WAV. “3回でRTFを測る” (Measure RTF over three runs) performs one warmup and three measured runs; you can share the resulting JSON. Recording, playback, processing and downloads stop when the app moves to the background.
+
+“モデルを削除” (Delete model) removes the model files, partial downloads and Core ML compilation caches. Recordings, enhanced WAV files, saved videos and measurement results are retained. Download the model again to resume enhancement.
 
 ## Processing modes
 
@@ -77,7 +79,7 @@ Input is converted to 16 kHz mono. Output is 16 kHz mono Float32 WAV. “3回で
 | ANE + GPU | Runs CNNs through Core ML and Mamba stages through MLX / GPU | Default in the iPhone app |
 | MLX GPU | Runs the full model on the GPU | Use the GPU only |
 
-Both modes retain all 30 stages, 16 FP32 recurrent states, five-second processing windows and 5% overlap. ANE + GPU uses FP16 for CNNs and boundary tensors, so its output differs from MLX GPU. The OS determines actual Core ML placement. Windows without a matching CNN shape use MLX.
+Both modes retain all 30 stages, 16 FP32 recurrent states, five-second processing windows and 5% overlap. Inputs with long silent sections use overflow protection. ANE + GPU uses FP16 for CNNs and boundary tensors, so its output differs from MLX GPU. The OS determines actual Core ML placement. Windows without a matching CNN shape use MLX.
 
 Audio is processed offline. Continuous conversion of live microphone input requires additional streaming support.
 
@@ -93,9 +95,12 @@ RTF is processing time divided by audio duration. An RTF of 0.1 means approximat
 
 Measured after warmup using 16 kHz mono audio lasting 7.92 seconds. The Mac results use explicitly selected optimization profiles. Initial preparation, input duration and device temperature affect processing time. See the [measurement conditions and quality comparisons](docs/BENCHMARKS.en.md).
 
+Version 0.2.0 achieved median RTF 0.09979 on 26.605 seconds of video audio using ANE + GPU on iPhone 17 Pro. Video import and export time are excluded. See the [benchmark conditions](docs/BENCHMARKS.en.md).
+
 ## Developer guides
 
 - [Building and running the Mac sample](docs/BUILDING.en.md)
+- [Importing, comparing and saving videos](docs/VIDEO.en.md)
 - [Integrating the Swift SDK](docs/SDK.en.md)
 - [Model distribution, download and deletion](docs/MODELS.en.md)
 - [Speed and quality measurements](docs/BENCHMARKS.en.md)

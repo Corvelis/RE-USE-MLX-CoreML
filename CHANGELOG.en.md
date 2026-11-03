@@ -2,6 +2,16 @@
 
 [日本語](CHANGELOG.md) | English
 
+## 0.2.0 — Unreleased
+
+- Added video import, noise reduction, comparison playback and MOV export to the iPhone app. Import videos up to five minutes long from Photos or Files.
+- Switch between original and enhanced audio without changing the video playback position. Save enhanced videos to Photos or share them.
+- Fixed unwanted noise caused by internal FP16 overflow on audio with long silent sections. All 30 stages and 16 states are retained; supported GPUs use BF16 for affected windows.
+- Decode video audio at its native sample rate to preserve stereo levels and audio timing.
+- Added Japanese and English video guides and video import/export regression checks.
+
+The model files are shared with version 0.1.0. Existing downloads remain compatible.
+
 ## 0.1.0 — 2026-11-02
 
 Initial release for Apple Silicon Macs and iPhones.

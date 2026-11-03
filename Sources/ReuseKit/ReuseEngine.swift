@@ -24,6 +24,8 @@ public struct ReuseMetrics: Encodable, Sendable {
     public let aneWindows: Int
     public let mlxWindows: Int
     public let zeroWindows: Int
+    public let precisionFallbackWindows: Int
+    public let wideRangeWindows: Int
     public let skippedTinyTailSamples: Int
     public let thermalStateBefore: Int
     public let thermalStateAfter: Int
@@ -57,6 +59,12 @@ public actor ReuseEngine {
     private var cnn: CNNBank?
     private var forward: (([MLXArray]) -> [MLXArray])?
     private var trunk: ((MLXArray) -> MLXArray)?
+    private var wideModel: SEMamba?
+    private var wideTrunk: ((MLXArray) -> MLXArray)?
+    private var wideForward: (([MLXArray]) -> [MLXArray])?
+    private var rangeModel: SEMamba?
+    private var rangeTrunk: ((MLXArray) -> MLXArray)?
+    private var rangeForward: (([MLXArray]) -> [MLXArray])?
     private var validated = false
 
     public init(modelPack: ReuseModelPack, cacheDirectory: URL, optimization: ReuseOptimization = .recommended) {
@@ -121,6 +129,42 @@ public actor ReuseEngine {
         cnn = try CNNBank(pack: pack, cache: cache, sharedTransfers: optimization.sharedCNN)
     }
 
+    private func prepareRangeScan() throws {
+        guard rangeModel == nil else { return }
+        let loaded = SEMamba(mode: .naxRangeShared16)
+        try loaded.update(parameters: model!.parameters(), verify: [.allModelKeysSet, .noUnusedKeys])
+        loaded.train(false)
+        for block in loaded.tfMamba { block.prepare() }
+        rangeModel = loaded
+        rangeTrunk = compile(inputs: [loaded]) { (input: MLXArray) -> MLXArray in
+            var value = input
+            for block in loaded.tfMamba { value = block(value) }
+            return value
+        }
+        rangeForward = compile(inputs: [loaded]) { (input: [MLXArray]) -> [MLXArray] in
+            let result = loaded(input[0], input[1]); return [result.0, result.1]
+        }
+    }
+
+    private func prepareWideScan() throws {
+        guard wideModel == nil else { return }
+        let loaded = SEMamba(mode: .wideScan)
+        // Share the same learned arrays. Only the scan output and following
+        // projection retain FP32 range before the original normalization.
+        try loaded.update(parameters: model!.parameters(), verify: [.allModelKeysSet, .noUnusedKeys])
+        loaded.train(false)
+        for block in loaded.tfMamba { block.prepare() }
+        wideModel = loaded
+        wideTrunk = compile(inputs: [loaded]) { (input: MLXArray) -> MLXArray in
+            var value = input
+            for block in loaded.tfMamba { value = block(value) }
+            return value
+        }
+        wideForward = compile(inputs: [loaded]) { (input: [MLXArray]) -> [MLXArray] in
+            let result = loaded(input[0], input[1]); return [result.0, result.1]
+        }
+    }
+
     public func enhance(_ audio: [Float], mode: ReuseMode) throws -> ReuseResult {
         try Task.checkCancellation()
         guard audio.count > 320, audio.allSatisfy(\.isFinite) else { throw ReuseError.invalid("0.02秒より長い有限値のmono音声が必要です。") }
@@ -152,7 +196,8 @@ public actor ReuseEngine {
                     let (mag, phase) = try Spectral.analysis(values)
                     eval(mag, phase)
                     return Job(start: start, count: values.count, mag: mag, phase: phase,
-                               ane: mode == .hybrid && available.contains(mag.shape[2]))
+                               ane: mode == .hybrid && available.contains(mag.shape[2]),
+                               wideRange: optimization == .naxFullShared16 && values.reduce(0) { $0 + ($1 == 0 ? 1 : 0) } > values.count / 2)
                 }
                 let work = jobs.filter { $0.mag != nil }
                 let pipelineTransfers = optimization.usesTransferPipeline
@@ -200,8 +245,11 @@ public actor ReuseEngine {
                         if pipelineTransfers, let (lastJob,lastValue) = previous, lastJob.ane {
                             pendingDecode = try cnn!.decoderInput(lastValue)
                         } else { pendingDecode = nil }
-                        let features = trunk!(encoded)
-                        asyncEval(features)
+                        let currentEncoded = encoded
+                        if job.wideRange { try prepareRangeScan() }
+                        var features = job.wideRange ? rangeTrunk!(currentEncoded) : trunk!(currentEncoded)
+                        let validFeatures = isFinite(features).all()
+                        asyncEval(features, validFeatures)
                         if let (lastJob, lastValue) = previous {
                             if let pendingDecode {
                                 lastJob.output = try cnn!.decodePrepared(pendingDecode, frames: lastJob.frames)
@@ -209,7 +257,18 @@ public actor ReuseEngine {
                             } else { try decode(lastJob, lastValue) }
                         }
                         if index+1 < work.count { encoded = try encode(work[index+1]) }
-                        eval(features)
+                        eval(features, validFeatures)
+                        // Check before Core ML: its activations can turn NaNs
+                        // into finite but unrelated audio, hiding scan overflow.
+                        if !validFeatures.item(Bool.self) {
+                            try prepareWideScan()
+                            features = wideTrunk!(currentEncoded)
+                            eval(features)
+                            guard isFinite(features).all().item(Bool.self) else {
+                                throw ReuseError.invalid("高精度処理でも推論を完了できませんでした。")
+                            }
+                            job.precisionFallback = true
+                        }
                         previous = (job, features)
                     }
                     if let (lastJob, lastValue) = previous { try decode(lastJob, lastValue) }
@@ -221,9 +280,17 @@ public actor ReuseEngine {
                         let result: (MLXArray, MLXArray)
                         if let output = job.output { result = output }
                         else {
-                            let output = forward!([mag, phase]); result = (output[0], output[1]); mlxCount += 1
+                            if job.wideRange { try prepareRangeScan() }
+                            let output = job.wideRange ? rangeForward!([mag, phase]) : forward!([mag, phase])
+                            result = (output[0], output[1]); mlxCount += 1
                         }
                         values = Spectral.synthesis(result.0, result.1, samples: job.count)
+                        if !values.allSatisfy(\.isFinite) {
+                            try prepareWideScan()
+                            let corrected = wideForward!([mag, phase])
+                            values = Spectral.synthesis(corrected[0], corrected[1], samples: job.count)
+                            job.precisionFallback = true
+                        }
                     } else { values = Array(repeating: 0, count: job.count); zeroCount += 1 }
                     guard values.count == job.count, values.allSatisfy(\.isFinite) else { throw ReuseError.invalid("推論出力に非有限値が含まれています。") }
                     let effective = min(overlap, job.count-1)
@@ -248,6 +315,8 @@ public actor ReuseEngine {
                     mode: mode, inputSamples: audio.count, sampleRate: 16000,
                     processingSeconds: elapsed, modelLoadSeconds: loadSeconds, mlxPeakBytes: Memory.peakMemory,
                     aneWindows: aneCount, mlxWindows: mlxCount, zeroWindows: zeroCount,
+                    precisionFallbackWindows: jobs.filter { $0.precisionFallback }.count,
+                    wideRangeWindows: jobs.filter { $0.mag != nil && ($0.wideRange || optimization.wideRange) }.count,
                     skippedTinyTailSamples: allStarts.last.map { starts.contains($0) ? 0 : audio.count-$0 } ?? 0,
                     thermalStateBefore: thermal, thermalStateAfter: ProcessInfo.processInfo.thermalState.rawValue,
                     operatingSystem: ProcessInfo.processInfo.operatingSystemVersionString,
@@ -265,6 +334,8 @@ public actor ReuseEngine {
 
     public func release() {
         forward = nil; trunk = nil; model = nil; cnn = nil
+        wideForward = nil; wideTrunk = nil; wideModel = nil
+        rangeForward = nil; rangeTrunk = nil; rangeModel = nil
         Memory.clearCache()
     }
 
@@ -372,11 +443,14 @@ public actor ReuseEngine {
         let start, count: Int
         let mag, phase: MLXArray?
         let ane: Bool
+        let wideRange: Bool
         var output: (MLXArray, MLXArray)?
         var encoderInput: MLMultiArray?
+        var precisionFallback = false
         var frames: Int { mag!.shape[2] }
-        init(start: Int, count: Int, mag: MLXArray? = nil, phase: MLXArray? = nil, ane: Bool = false) {
+        init(start: Int, count: Int, mag: MLXArray? = nil, phase: MLXArray? = nil, ane: Bool = false, wideRange: Bool = false) {
             self.start = start; self.count = count; self.mag = mag; self.phase = phase; self.ane = ane
+            self.wideRange = wideRange
         }
     }
 }

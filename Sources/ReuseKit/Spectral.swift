@@ -42,6 +42,7 @@ enum Spectral {
     }
 
     static func synthesis(_ amp: MLXArray, _ phase: MLXArray, samples: Int) -> [Float] {
+        let validHeads = isFinite(amp).all() .&& isFinite(phase).all()
         let magnitude = expm1(maximum(amp, MLXArray(Float(0))))
         let zeroCount = (magnitude .== 0).sum(axis: 1, keepDims: true)
         let filtered = which(zeroCount .> (amp.shape[1]/2), MLXArray(Float(0)), amp)
@@ -60,7 +61,10 @@ enum Spectral {
             outputShapes: [[1, length]], outputDTypes: [.float32])[0]
         let normalized = signal/maximum(envelope, MLXArray(Float(1e-10)))
         let output = normalized[0, (nFFT/2)..<(length-nFFT/2)]
-        eval(output)
+        // Validate the heads in the same submission as reconstruction. NaNs
+        // must not be hidden by magnitude clamping, and need no extra CPU wait.
+        eval(output, validHeads)
+        guard validHeads.item(Bool.self) else { return Array(repeating: .nan, count: samples) }
         var values = output.asArray(Float.self)
         if values.count < samples { values += Array(repeating: 1e-8, count: samples-values.count) }
         return Array(values.prefix(samples))

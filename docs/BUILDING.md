@@ -104,4 +104,10 @@ python3 test_model_assets.py
 python3 verify_sample.py
 ```
 
-GitHub Actionsでは、モデル管理のテスト、同梱サンプルの整合性、ライセンス通知、補助スクリプトとXcodeプロジェクトの生成を検証します。
+動画の読み込み・保存を確認する場合は、MacにFFmpegも用意して実行します。テストは短い映像と音を生成し、音声の位置・音量、映像と向きの保持、比較用プレイヤー、キャンセル、作業用コピーの削除を確認します。
+
+```sh
+python3 test_video_media.py
+```
+
+GitHub Actionsでは、モデル管理、動画の読み込み・保存、同梱サンプルの整合性、ライセンス通知、補助スクリプトとXcodeプロジェクトの生成を検証します。

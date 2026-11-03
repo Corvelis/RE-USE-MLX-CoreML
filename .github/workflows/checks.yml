@@ -41,3 +41,19 @@ jobs:
           plutil -lint .build/app/ReuseLab.xcodeproj/project.pbxproj
       - name: Test model downloads and storage
         run: python3 test_model_assets.py
+
+  video-media:
+    name: Video import and export
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install FFmpeg if needed
+        run: |
+          if ! command -v ffmpeg >/dev/null; then
+            brew install ffmpeg
+          fi
+      - name: Test video import, comparison and lossless export
+        run: python3 test_video_media.py

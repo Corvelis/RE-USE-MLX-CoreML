@@ -6,16 +6,18 @@ import ReuseKit
 import ReusePlayback
 import ReuseModelAssets
 import UIKit
+import PhotosUI
+import Photos
 
 @MainActor
 final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorderDelegate {
     nonisolated static let maximumAudioSeconds: TimeInterval = 300
     @Published var mode: ReuseMode = .hybrid
-    @Published var sourceName = "音声を用意してください"
+    @Published var sourceName = "動画・音声を選んでください"
     @Published var prepared: ReuseAudio?
     @Published var output: ReuseResult?
     @Published var busy = false
-    @Published var status = "サンプル、音声ファイル、録音から選べます。"
+    @Published var status = "サンプル、ファイル、動画、録音から選べます。"
     @Published var error: String?
     @Published var recording = false
     @Published var playbackProcessed = true
@@ -25,6 +27,11 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
     @Published var inputURL: URL?
     @Published var reportURL: URL?
     @Published var medianRTF: Double?
+    @Published var videoSource: PreparedVideo?
+    @Published var videoComparison: VideoComparison?
+    @Published var videoOutputURL: URL?
+    @Published var savingVideo = false
+    @Published var videoSaveMessage: String?
     @Published var modelInstalled = false
     @Published var modelManaging = false
     @Published var modelTransfer: ReuseModelTransferProgress?
@@ -65,23 +72,80 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
     }
 
     func importAudio(_ url: URL, name: String? = nil, scoped: Bool = true) {
+        importMedia(url, name: name, scoped: scoped)
+    }
+
+    func importMedia(_ url: URL, name: String? = nil, scoped: Bool = true) {
         guard !busy, !recording else { return }
-        stopPlayback(); clearResult(); error = nil; busy = true; status = "音声を読み込み中…"
+        stopPlayback(); clearResult(); error = nil; busy = true; status = "ファイルを読み込み中…"
         task = Task {
             let granted = scoped && url.startAccessingSecurityScopedResource()
             defer { if granted { url.stopAccessingSecurityScopedResource() }; busy = false }
             do {
+                if try await VideoMedia.containsVideo(url) {
+                    let file = try await Task.detached(priority: .userInitiated) {
+                        try ImportedVideoFile.copy(from: url)
+                    }.value
+                    try await prepareVideo(file)
+                    return
+                }
                 let audio = try await Task.detached(priority: .userInitiated) {
                     try ReuseAudioFile.read(url, maximumSeconds: LabModel.maximumAudioSeconds)
                 }.value
                 try Task.checkCancellation()
                 let input = documents.appendingPathComponent("Current/input16.wav")
                 try ReuseAudioFile.write(audio.samples, to: input)
-                self.prepared = audio; self.inputURL = input
+                self.videoSource = nil; self.prepared = audio; self.inputURL = input
                 self.sourceName = name ?? url.lastPathComponent
                 status = "準備できました。"
             } catch is CancellationError { status = "停止しました。" }
             catch { self.error = error.localizedDescription; status = "音声を読み込めませんでした。" }
+        }
+    }
+
+    func importVideo(_ selection: PhotosPickerItem) {
+        guard !busy, !recording else { return }
+        stopPlayback(); clearResult(); error = nil; busy = true; status = "動画を読み込み中…"
+        task = Task {
+            defer { busy = false }
+            do {
+                guard let file = try await selection.loadTransferable(type: ImportedVideoFile.self) else {
+                    throw VideoMediaError.message("動画を読み込めませんでした。")
+                }
+                try Task.checkCancellation()
+                try await prepareVideo(file)
+            } catch is CancellationError { status = "停止しました。" }
+            catch { self.error = error.localizedDescription; status = "動画を読み込めませんでした。" }
+        }
+    }
+
+    private func prepareVideo(_ file: ImportedVideoFile) async throws {
+        let source = try await VideoMedia.prepare(file)
+        let audio = try await Task.detached(priority: .userInitiated) {
+            try ReuseAudioFile.read(source.audioURL, maximumSeconds: LabModel.maximumAudioSeconds + 0.001)
+        }.value
+        try Task.checkCancellation()
+        videoSource = source; prepared = audio; inputURL = source.audioURL
+        sourceName = "選択した動画"
+        status = "動画の準備ができました。"
+    }
+
+    func saveVideoToPhotos() {
+        guard !savingVideo, let url = videoOutputURL else { return }
+        savingVideo = true; videoSaveMessage = nil; error = nil
+        Task {
+            defer { savingVideo = false }
+            let permission = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+            guard permission == .authorized || permission == .limited else {
+                error = "写真に保存するには、設定で写真への追加を許可してください。共有からファイルにも保存できます。"
+                return
+            }
+            do {
+                try await PHPhotoLibrary.shared().performChanges {
+                    PHAssetCreationRequest.forAsset().addResource(with: .video, fileURL: url, options: nil)
+                }
+                videoSaveMessage = "写真に保存しました。"
+            } catch { self.error = error.localizedDescription }
         }
     }
 
@@ -90,12 +154,14 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
         guard !simulator else { error = "MLXの推論は実機iPhoneで試してください。Simulatorは画面確認用です。"; return }
         stopPlayback(); clearResult(); error = nil; busy = true
         let selected = mode
+        let sourceVideo = videoSource
         task = Task {
             defer { busy = false }
             do {
                 let engine = try await requireEngine()
                 let directory = documents.appendingPathComponent("Runs/\(UUID().uuidString)")
                 var results = [ReuseMetrics](), warmup: ReuseMetrics?
+                var finalResult: ReuseResult?
                 if benchmark {
                     status = "準備実行 1/1…"
                     warmup = try await engine.enhance(audio.samples, mode: selected).metrics
@@ -107,15 +173,28 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
                     let result = try await engine.enhance(audio.samples, mode: selected)
                     try Task.checkCancellation()
                     results.append(result.metrics)
-                    output = result
+                    finalResult = result
                 }
-                guard let output else { return }
+                guard let finalResult else { return }
                 let wav = directory.appendingPathComponent("enhanced.wav")
                 let json = directory.appendingPathComponent("report.json")
-                try ReuseAudioFile.write(output.samples, to: wav)
+                try ReuseAudioFile.write(finalResult.samples, to: wav)
                 let report = LabReport(source: audio.info, mode: selected, warmup: warmup, trials: results,
                     device: UIDevice.current.model, identifier: Self.hardwareIdentifier(), date: Date().ISO8601Format())
                 try ReuseAudioFile.writeJSON(report, to: json)
+                if let sourceVideo {
+                    status = "動画を書き出しています…"
+                    let movie = try await VideoMedia.export(source: sourceVideo, enhancedAudio: wav, directory: directory)
+                    let parts = try await VideoMedia.composition(for: sourceVideo, audioURLs: [sourceVideo.file.url, wav])
+                    try Task.checkCancellation()
+                    let session = AVAudioSession.sharedInstance()
+                    try session.setCategory(.playback)
+                    try session.setActive(true)
+                    videoComparison = VideoComparison(parts: parts)
+                    observeAudioSession()
+                    videoOutputURL = movie
+                }
+                output = finalResult
                 outputURL = wav; reportURL = json
                 medianRTF = benchmark ? report.medianRTF : nil
                 await refreshModelAssets()
@@ -147,7 +226,7 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
                 ])
                 recorder?.delegate = self
                 guard recorder?.record(forDuration: Self.maximumAudioSeconds) == true else { throw ReuseError.invalid("録音を開始できません。") }
-                prepared = nil; inputURL = nil; sourceName = "マイク録音"
+                videoSource = nil; prepared = nil; inputURL = nil; sourceName = "マイク録音"
                 recording = true; status = "録音中 · 最大5分。停止ボタンで終了できます。"
             } catch { self.error = error.localizedDescription }
         }
@@ -192,9 +271,11 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
     func selectPlayback(processed: Bool) {
         playbackProcessed = processed
         player?.processed = processed
+        videoComparison?.select(processed: processed)
     }
 
     private func pausePlayback() {
+        videoComparison?.pause()
         player?.pause()
         playbackIsPlaying = false
         playbackTime = player?.currentTime ?? 0
@@ -219,13 +300,18 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
     }
 
     func stopPlayback() {
+        videoComparison?.pause()
+        videoComparison?.select(processed: true)
         playbackTask?.cancel(); playbackTask = nil
         player?.stop(); player = nil
         playbackIsPlaying = false; playbackTime = 0; playbackProcessed = true
         audioObservers.forEach(NotificationCenter.default.removeObserver)
         audioObservers.removeAll()
     }
-    func clearResult() { output = nil; outputURL = nil; reportURL = nil; medianRTF = nil }
+    func clearResult() {
+        videoComparison?.stop(); videoComparison = nil; videoOutputURL = nil; videoSaveMessage = nil
+        output = nil; outputURL = nil; reportURL = nil; medianRTF = nil
+    }
     func stopAll() {
         task?.cancel(); stopPlayback()
         if recording { recorder?.delegate = nil; recorder?.stop(); recorder = nil; recording = false }
@@ -240,6 +326,7 @@ final class LabModel: NSObject, ObservableObject, @preconcurrency AVAudioRecorde
             }
         }
         await configureModelAssets()
+        ImportedVideoFile.removeOrphans()
         if CommandLine.arguments.contains("--hf-model-smoke"), !simulator {
             task = Task { await performHuggingFaceSmoke() }
             await task?.value

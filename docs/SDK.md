@@ -14,7 +14,7 @@ Xcodeの「Add Package Dependencies」からリポジトリURLとバージョン
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Corvelis/RE-USE-MLX-CoreML.git", from: "0.1.0")
+    .package(url: "https://github.com/Corvelis/RE-USE-MLX-CoreML.git", from: "0.2.0")
 ],
 targets: [
     .executableTarget(name: "MyApp", dependencies: [
@@ -86,6 +86,8 @@ let engine = ReuseEngine(
 )
 let result = try await engine.enhance(audio.samples, mode: .hybrid)
 ```
+
+無音が多い入力では、対応するGPUでBF16の走査出力を使用し、桁あふれを防ぎます。推論中に非有限値を検出した窓はFP32の走査出力で再処理します。計測JSONの`wideRangeWindows`はBF16を使用した窓数、`precisionFallbackWindows`は再処理した窓数です。いずれもモデルの段数や状態数を減らしません。
 
 一度の呼び出しで音声をまとめて処理します。5秒窓と5％の重なりを用いるため、RTFが小さくてもリアルタイムのストリーミングAPIとしては使えません。
 
