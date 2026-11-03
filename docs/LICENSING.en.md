@@ -7,7 +7,7 @@ The SDK and sample app code are licensed under [Apache License 2.0](../LICENSE).
 | Material | License | Notices and requirements |
 | --- | --- | --- |
 | ReuseKit / RE-USE Lab code | Apache-2.0 | Retain [LICENSE](../LICENSE) and [NOTICE](../NOTICE) |
-| NVIDIA RE-USE model and converted models | OpenMDW-1.1 | Retain the [complete model license](../licenses/NVIDIA-RE-USE.txt) and copyright/origin notices |
+| NVIDIA-NemotronLabs-RE-USE model and converted models | OpenMDW-1.1 | Retain the [complete model license](../licenses/NVIDIA-RE-USE.txt) and copyright/origin notices |
 | Inference code derived from SpeechLens | Apache-2.0 | Original copyright notices and modification details are included in NOTICE |
 | MLX Swift / MLX / MLX C | MIT | Retain copyright and permission notices |
 | Swift Numerics | Apache-2.0 + Swift Runtime Library Exception | See the [original license](../licenses/Swift-Numerics.txt) |
@@ -15,6 +15,17 @@ The SDK and sample app code are licensed under [Apache License 2.0](../LICENSE).
 | fmt / nlohmann/json | MIT | Retain permission notices and copyright notices for included code |
 | Third-party code within MLX | BSD-2-Clause / BSD-3-Clause / zlib / Apache-2.0 and others | See [third-party notices](../licenses/MLX-Third-Party.txt) |
 | Sample recording | Apache-2.0 | Retain [LICENSE](../LICENSE) and the [audio notice](../licenses/Audio-Samples.txt) |
+
+## Model releases and commercial use
+
+This project uses [NVIDIA-NemotronLabs-RE-USE](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE), which permits commercial use. NVIDIA distributes RE-USE releases with different licenses:
+
+| NVIDIA release | Model license | Commercial use |
+| --- | --- | --- |
+| [Earlier `nvidia/RE-USE`](https://huggingface.co/nvidia/RE-USE) | Noncommercial NSCLv1 | Not permitted |
+| [`nvidia/NVIDIA-NemotronLabs-RE-USE`, used by this port](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE) | OpenMDW-1.1 | Permitted, subject to the license terms |
+
+The source checkpoint is revision `31f82f2efad1095034492f236e8dac9239ba713b`. The MLX weights and converted Core ML models retain OpenMDW-1.1. When redistributing model materials, include the [complete license](../licenses/NVIDIA-RE-USE.txt) and applicable copyright/origin notices.
 
 ## Distributing an app or library
 

@@ -7,7 +7,7 @@ SDKとサンプルアプリのコードは[Apache License 2.0](../LICENSE)で公
 | 対象 | ライセンス | 表示・条件 |
 | --- | --- | --- |
 | ReuseKit / RE-USE Labのコード | Apache-2.0 | [LICENSE](../LICENSE)と[NOTICE](../NOTICE)を保持 |
-| NVIDIA RE-USEのモデル・変換済みモデル | OpenMDW-1.1 | [モデルのライセンス全文](../licenses/NVIDIA-RE-USE.txt)と著作権・出典表示を保持 |
+| NVIDIA-NemotronLabs-RE-USEのモデル・変換済みモデル | OpenMDW-1.1 | [モデルのライセンス全文](../licenses/NVIDIA-RE-USE.txt)と著作権・出典表示を保持 |
 | SpeechLens由来の推論コード | Apache-2.0 | NOTICEに元の著作権表示と改変内容を記載 |
 | MLX Swift / MLX / MLX C | MIT | 著作権表示と許諾文を保持 |
 | Swift Numerics | Apache-2.0 + Swift Runtime Library Exception | [原文](../licenses/Swift-Numerics.txt)を参照 |
@@ -15,6 +15,17 @@ SDKとサンプルアプリのコードは[Apache License 2.0](../LICENSE)で公
 | fmt / nlohmann/json | MIT | 許諾文と組み込まれたコードの著作権表示を保持 |
 | MLX内部の第三者コード | BSD-2-Clause / BSD-3-Clause / zlib / Apache-2.0など | [第三者表示](../licenses/MLX-Third-Party.txt)を参照 |
 | サンプル音声 | Apache-2.0 | [LICENSE](../LICENSE)と[音声の表示](../licenses/Audio-Samples.txt)を保持 |
+
+## モデルの版と商用利用
+
+本プロジェクトは、商用利用が許可された[NVIDIA-NemotronLabs-RE-USE](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE)を使用します。NVIDIAが公開しているRE-USEには、ライセンスの異なる配布モデルがあります。
+
+| NVIDIAの配布モデル | モデルのライセンス | 商用利用 |
+| --- | --- | --- |
+| [旧版`nvidia/RE-USE`](https://huggingface.co/nvidia/RE-USE) | NSCLv1・非商用 | 許可されません |
+| [今回使用する`nvidia/NVIDIA-NemotronLabs-RE-USE`](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE) | OpenMDW-1.1 | ライセンスの条件に従って利用できます |
+
+今回使用した元モデルのrevisionは`31f82f2efad1095034492f236e8dac9239ba713b`です。MLXの重みとCore MLへの変換済みモデルにもOpenMDW-1.1を保持しています。モデルを再配布する場合は、[ライセンス全文](../licenses/NVIDIA-RE-USE.txt)と適用される著作権・出典表示を含めてください。
 
 ## アプリやライブラリとして配布する
 

@@ -2,9 +2,11 @@
 
 [日本語](README.md) | English
 
-An unofficial Apple Silicon port of NVIDIA RE-USE. The Swift library and samples run speech enhancement on Macs and iPhones using the same model files, with all audio processing on the device.
+An unofficial Apple Silicon port of [NVIDIA-NemotronLabs-RE-USE](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE). The Swift library and samples run speech enhancement on Macs and iPhones using the same model files, with all audio processing on the device.
 
-Download the model from [RE-USE for Apple Silicon (MLX + Core ML)](https://huggingface.co/AILogDev/RE-USE-MLX-CoreML). For private model access, see the [model management guide](docs/MODELS.en.md#trying-a-private-model).
+**This port's model permits commercial use under OpenMDW-1.1.** The [earlier `nvidia/RE-USE` release](https://huggingface.co/nvidia/RE-USE) has a noncommercial NSCLv1 license. See the [licensing guide](docs/LICENSING.en.md#model-releases-and-commercial-use) for the release distinction and redistribution requirements.
+
+Download the model from [RE-USE for Apple Silicon (MLX + Core ML)](https://huggingface.co/AILogDev/RE-USE-MLX-CoreML) without authentication. See the [model management guide](docs/MODELS.en.md) for download and deletion details.
 
 ## Demo video
 

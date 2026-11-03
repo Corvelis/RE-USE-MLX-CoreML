@@ -15,9 +15,20 @@ tags:
 
 # RE-USE for Apple Silicon (MLX + Core ML)
 
-An unofficial Apple Silicon port of NVIDIA RE-USE for on-device speech enhancement with ReuseKit on Macs and iPhones.
+An unofficial Apple Silicon port of [NVIDIA-NemotronLabs-RE-USE](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE) for on-device speech enhancement with ReuseKit on Macs and iPhones.
 
 The same model files work on both platforms. The pack contains MLX weights and Core ML CNN packages. Core ML compiles its packages on each device.
+
+## Commercial use and model identity
+
+**This model permits commercial use under OpenMDW-1.1.** NVIDIA distributes RE-USE releases with different licenses:
+
+| NVIDIA release | Model license | Commercial use |
+| --- | --- | --- |
+| [Earlier `nvidia/RE-USE`](https://huggingface.co/nvidia/RE-USE) | Noncommercial NSCLv1 | Not permitted |
+| [`nvidia/NVIDIA-NemotronLabs-RE-USE`, used by this port](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE) | OpenMDW-1.1 | Permitted, subject to the license terms |
+
+The converted MLX and Core ML models retain OpenMDW-1.1. When redistributing model materials, include the [complete model license](https://huggingface.co/AILogDev/RE-USE-MLX-CoreML/blob/main/LICENSE) and applicable copyright/origin notices. The companion SDK code and original sample recording are Apache-2.0; see the notices in `ReuseKit.zip`.
 
 ## Input and output
 

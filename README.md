@@ -2,9 +2,11 @@
 
 日本語 | [English](README.en.md)
 
-NVIDIA RE-USEの非公式Apple Silicon向け移植版です。Swiftライブラリとサンプルアプリを使い、MacとiPhoneで同じモデルによるノイズ除去を端末内で実行できます。
+[NVIDIA-NemotronLabs-RE-USE](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-RE-USE)の非公式Apple Silicon向け移植版です。Swiftライブラリとサンプルアプリを使い、MacとiPhoneで同じモデルによるノイズ除去を端末内で実行できます。
 
-モデルは[RE-USE for Apple Silicon (MLX + Core ML)](https://huggingface.co/AILogDev/RE-USE-MLX-CoreML)から取得します。非公開モデルへのアクセス方法は[モデル管理ガイド](docs/MODELS.md#非公開モデルを試す)を参照してください。
+**今回使用しているモデルは、OpenMDW-1.1の条件に従って商用利用できます。** [旧版`nvidia/RE-USE`](https://huggingface.co/nvidia/RE-USE)はNSCLv1の非商用ライセンスです。モデルの版と再配布時の条件は[ライセンスガイド](docs/LICENSING.md#モデルの版と商用利用)を参照してください。
+
+モデルは[RE-USE for Apple Silicon (MLX + Core ML)](https://huggingface.co/AILogDev/RE-USE-MLX-CoreML)から認証なしで取得できます。取得・削除の詳細は[モデル管理ガイド](docs/MODELS.md)を参照してください。
 
 ## デモ動画
 
